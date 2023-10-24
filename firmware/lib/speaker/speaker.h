@@ -15,4 +15,6 @@
 
 void setup_speaker(i2s_chan_handle_t *speaker_handle);
 
+void write_speaker(i2s_chan_handle_t *speaker_handle, int16_t *data, size_t len);
+
 #endif // SPEAKER_H

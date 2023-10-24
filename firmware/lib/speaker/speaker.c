@@ -31,3 +31,9 @@ void setup_speaker(i2s_chan_handle_t *speaker_handle)
     /* Enable the I2S channel */
     ESP_ERROR_CHECK(i2s_channel_enable(*speaker_handle));
 }
+
+void write_speaker(i2s_chan_handle_t *speaker_handle, int16_t *data, size_t len)
+{
+    /* Write data to the I2S channel */
+    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, NULL, len, (size_t *)data, portMAX_DELAY));
+}

@@ -17,4 +17,6 @@
 
 void setup_microphone(i2s_chan_handle_t *microphone_handle);
 
+int16_t *read_microphone(i2s_chan_handle_t *microphone_handle);
+
 #endif // MICROPHONE_H

@@ -20,7 +20,7 @@ int16_t i2s_readraw_buff[SAMPLE_SIZE];
 size_t bytes_read;
 const int WAVE_HEADER_SIZE = 44;
 
-#define SAMPLE_CHUNK_SIZE 480                           // chosen to be 30ms (at 16kHz) for WebRTC VAD, and fit within UDP packet as int16 (480 * 2 < 1400)
+#define SAMPLE_CHUNK_SIZE 480                    // chosen to be 30ms (at 16kHz) for WebRTC VAD, and fit within UDP packet as int16 (480 * 2 < 1400)
 int32_t mic_buffer[SAMPLE_CHUNK_SIZE];           // For raw values from I2S
 int16_t converted_mic_buffer[SAMPLE_CHUNK_SIZE]; // For converted values to be sent over UDP
 
@@ -29,4 +29,15 @@ void setup_microphone(i2s_chan_handle_t *microphone_handle)
     ESP_ERROR_CHECK(i2s_new_channel(&microphone_chan_cfg, NULL, microphone_handle));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(*microphone_handle, &microphone_rx_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(*microphone_handle));
+}
+
+int16_t *read_microphone(i2s_chan_handle_t *microphone_handle)
+{
+    esp_err_t err;
+    err = i2s_channel_read(*microphone_handle, i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, portMAX_DELAY);
+    if (err != ESP_OK)
+    {
+        return NULL;
+    }
+    return i2s_readraw_buff;
 }
