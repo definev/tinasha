@@ -22,7 +22,7 @@ i2s_std_config_t speaker_std_cfg = {
     },
 };
 
-void setup_speaker(i2s_chan_handle_t *speaker_handle)
+void setup_speaker(i2s_chan_handle_t* speaker_handle)
 {
     /* Allocate a new TX channel and get the handle of this channel */
     ESP_ERROR_CHECK(i2s_new_channel(&speaker_chan_cfg, speaker_handle, NULL));
@@ -32,8 +32,9 @@ void setup_speaker(i2s_chan_handle_t *speaker_handle)
     ESP_ERROR_CHECK(i2s_channel_enable(*speaker_handle));
 }
 
-void write_speaker(i2s_chan_handle_t *speaker_handle, int16_t *data, size_t len)
+void write_speaker(i2s_chan_handle_t speaker_handle, int16_t *data, size_t len)
 {
+    size_t bytes_written;
     /* Write data to the I2S channel */
-    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, NULL, len, (size_t *)data, portMAX_DELAY));
+    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, &data, len, &bytes_written, portMAX_DELAY));
 }
