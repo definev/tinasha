@@ -1,0 +1,8 @@
+#ifndef APPCONFIG_H
+#define APPCONFIG_H
+
+#define MAX_TIMEOUT 10000
+
+#define MICROPHONE_RECV_BUF_SIZE 400
+
+#endif

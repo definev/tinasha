@@ -1,3 +1,4 @@
+#include "appconfig.h"
 #include "speaker.h"
 
 #include "freertos/FreeRTOS.h"
@@ -7,22 +8,17 @@
 
 i2s_chan_config_t speaker_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
 i2s_std_config_t speaker_std_cfg = {
-    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(48000),
-    .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(100000),
+    .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
     .gpio_cfg = {
-        .mclk = I2S_GPIO_UNUSED,
+        .mclk = I2S_SPEAKER_MCLK,
         .bclk = I2S_SPEAKER_SERIAL_CLOCK,
         .ws = I2S_SPEAKER_LEFT_RIGHT_CLOCK,
-        .dout = I2S_SPEAKER_SERIAL_DATA,
-        .invert_flags = {
-            .mclk_inv = false,
-            .bclk_inv = false,
-            .ws_inv = false,
-        },
+        .din = I2S_SPEAKER_SERIAL_DATA,
     },
 };
 
-void setup_speaker(i2s_chan_handle_t* speaker_handle)
+void speaker_setup(i2s_chan_handle_t *speaker_handle)
 {
     /* Allocate a new TX channel and get the handle of this channel */
     ESP_ERROR_CHECK(i2s_new_channel(&speaker_chan_cfg, speaker_handle, NULL));
@@ -32,9 +28,7 @@ void setup_speaker(i2s_chan_handle_t* speaker_handle)
     ESP_ERROR_CHECK(i2s_channel_enable(*speaker_handle));
 }
 
-void write_speaker(i2s_chan_handle_t speaker_handle, int16_t *data, size_t len)
+void speaker_write(i2s_chan_handle_t speaker_handle, int16_t *data)
 {
-    size_t bytes_written;
-    /* Write data to the I2S channel */
-    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, &data, len, &bytes_written, portMAX_DELAY));
+    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, data, MICROPHONE_RECV_BUF_SIZE, NULL, MAX_TIMEOUT));
 }

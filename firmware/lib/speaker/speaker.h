@@ -8,13 +8,13 @@
 /* Speaker configuration */
 
 /* Speaker GPIO PIN definitions */
-#define I2S_SPEAKER_LEFT_RIGHT_CLOCK GPIO_NUM_40 // LRCLK
+#define I2S_SPEAKER_SERIAL_DATA GPIO_NUM_40      // SDIN
 #define I2S_SPEAKER_SERIAL_CLOCK GPIO_NUM_41     // SCLK
-#define I2S_SPEAKER_SERIAL_DATA GPIO_NUM_42      // SDIN
-#define I2S_SPEAKER_MCLK GPIO_NUM_43             // MCLK
+#define I2S_SPEAKER_LEFT_RIGHT_CLOCK GPIO_NUM_42 // LRCLK
+#define I2S_SPEAKER_MCLK GPIO_NUM_3              // MCLK
 
-void setup_speaker(i2s_chan_handle_t *speaker_handle);
+void speaker_setup(i2s_chan_handle_t *speaker_handle);
 
-void write_speaker(i2s_chan_handle_t speaker_handle, int16_t *data, size_t len);
+void speaker_write(i2s_chan_handle_t speaker_handle, int16_t *data);
 
 #endif // SPEAKER_H

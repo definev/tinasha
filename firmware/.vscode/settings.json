@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "i2s_common.h": "c"
+        "i2s_common.h": "c",
+        "speaker.h": "c",
+        "atomic": "c",
+        "compare": "c",
+        "cstdint": "c",
+        "microphone.h": "c"
     }
 }
