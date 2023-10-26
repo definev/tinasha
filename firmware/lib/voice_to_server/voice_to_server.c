@@ -14,10 +14,11 @@
 #include "esp_websocket_client.h"
 #include "esp_event.h"
 
-
 esp_websocket_client_config_t voice_to_server_client_cfg = {
     .uri = VTS_WS_URI,
     .disable_auto_reconnect = true,
+    .reconnect_timeout_ms = 30000,
+    .network_timeout_ms = 30000,
 };
 
 voice_data_t voice_to_server_data_from_raw(int16_t *raw, uint32_t len)
@@ -48,7 +49,7 @@ void setup_voice_to_server(voice_to_server_handle_t *handle)
         &voice_to_server_client_cfg,
         xQueueCreate(10, sizeof(voice_data_t)));
     *handle = newHandle;
-    voice_to_server_init(handle);
+    ESP_ERROR_CHECK(voice_to_server_init(handle));
     xTaskCreatePinnedToCore(&voice_to_server_task, "voice_to_server_task", 4096, handle, 1, NULL, 1);
 }
 

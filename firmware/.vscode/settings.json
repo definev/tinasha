@@ -5,6 +5,7 @@
         "atomic": "c",
         "compare": "c",
         "cstdint": "c",
-        "microphone.h": "c"
+        "microphone.h": "c",
+        "sdkconfig.h": "c"
     }
 }

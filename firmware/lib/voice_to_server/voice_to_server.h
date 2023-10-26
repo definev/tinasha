@@ -1,7 +1,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_websocket_client.h"
 
-#define VTS_WS_URI "ws://192.168.1.2:8080/ws"
+#define VTS_WS_URI "ws://tinasha.loca.lt"
 
 typedef struct
 {
@@ -19,7 +19,7 @@ typedef struct
 
 void voice_to_server_task(void *pvParameters);
 
-void setup_voice_to_server(voice_to_server_handle_t *handle);
+void setup_voice_to_server(voice_to_server_handle_t *handler);
 
 voice_to_server_handle_t voice_to_server_create(esp_websocket_client_config_t *config, QueueHandle_t queue);
 
