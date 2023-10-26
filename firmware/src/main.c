@@ -1,5 +1,4 @@
 #include "sdkconfig.h"
-#include "appconfig.h"
 #include "microphone.h"
 #include "speaker.h"
 #include "wifi_helper.h"
@@ -16,7 +15,7 @@
 i2s_chan_handle_t microphone_handle;
 i2s_chan_handle_t speaker_handle;
 
-int16_t samples[MICROPHONE_RECV_BUF_SIZE] = {0};
+int16_t samples[CONFIG_MICROPHONE_RECV_BUF_SIZE] = {0};
 voice_to_server_handle_t voice_to_server_handle;
 
 void setup()

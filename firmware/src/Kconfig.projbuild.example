@@ -12,4 +12,16 @@ menu "Example Configuration"
         help
             The password of the WiFi network to connect to.
 
+    config MAX_TIMEOUT
+        int "Max timeout"
+        default 10000
+        help 
+            Max timeout for peripheral
+    
+    config MICROPHONE_RECV_BUF_SIZE
+        int "Microphone buffer size"
+        default 2400
+        help
+            Receiver buffer array size when using microphone
+
 endmenu

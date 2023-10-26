@@ -1,4 +1,4 @@
-#include "appconfig.h"
+#include "sdkconfig.h"
 #include "microphone.h"
 
 #include "freertos/FreeRTOS.h"
@@ -25,5 +25,5 @@ void microphone_setup(i2s_chan_handle_t *microphone_handle)
 
 void microphone_read(i2s_chan_handle_t microphone_handle, int16_t *mic_buffer)
 {
-    ESP_ERROR_CHECK(i2s_channel_read(microphone_handle, mic_buffer, MICROPHONE_RECV_BUF_SIZE, NULL, MAX_TIMEOUT));
+    ESP_ERROR_CHECK(i2s_channel_read(microphone_handle, mic_buffer, CONFIG_MICROPHONE_RECV_BUF_SIZE, NULL, CONFIG_MAX_TIMEOUT));
 }

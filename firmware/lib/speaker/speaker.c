@@ -1,4 +1,4 @@
-#include "appconfig.h"
+#include "sdkconfig.h"
 #include "speaker.h"
 
 #include "freertos/FreeRTOS.h"
@@ -28,5 +28,5 @@ void speaker_setup(i2s_chan_handle_t *speaker_handle)
 
 void speaker_write(i2s_chan_handle_t speaker_handle, int16_t *data)
 {
-    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, data, MICROPHONE_RECV_BUF_SIZE, NULL, MAX_TIMEOUT));
+    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, data, CONFIG_MICROPHONE_RECV_BUF_SIZE, NULL, CONFIG_MAX_TIMEOUT));
 }
