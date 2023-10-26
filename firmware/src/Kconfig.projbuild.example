@@ -24,4 +24,16 @@ menu "Example Configuration"
         help
             Receiver buffer array size when using microphone
 
+    config SAMPLE_RATE
+        int "Sample rate"
+        default 16000
+        help
+            Sample rate of microphone
+    
+    config SAMPLE_BITS
+        int "Sample bits"
+        default 16
+        help
+            Sample bits of microphone
+
 endmenu

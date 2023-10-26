@@ -8,7 +8,7 @@
 
 i2s_chan_config_t speaker_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
 i2s_pdm_tx_config_t speaker_std_cfg = {
-    .clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(44100),
+    .clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(CONFIG_SAMPLE_RATE),
     .slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
     .gpio_cfg = {
         .clk = I2S_SPEAKER_SERIAL_CLOCK,
