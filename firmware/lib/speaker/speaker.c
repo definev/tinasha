@@ -2,17 +2,20 @@
 #include "speaker.h"
 
 #include "freertos/FreeRTOS.h"
-#include "driver/i2s_pdm.h"
+#include "driver/i2s_std.h"
 #include "driver/i2s_common.h"
 #include "esp_err.h"
 
 i2s_chan_config_t speaker_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
-i2s_pdm_tx_config_t speaker_std_cfg = {
-    .clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(CONFIG_SAMPLE_RATE),
-    .slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+i2s_std_config_t speaker_std_cfg = {
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(CONFIG_SAMPLE_RATE),
+    .slot_cfg = I2S_STD_PCM_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
     .gpio_cfg = {
-        .clk = I2S_SPEAKER_SERIAL_CLOCK,
+        .ws = I2S_SPEAKER_WORD_SELECT,
+        .bclk = I2S_SPEAKER_SERIAL_CLOCK,
+        .din = I2S_GPIO_UNUSED,
         .dout = I2S_SPEAKER_SERIAL_DATA,
+        .mclk = I2S_GPIO_UNUSED,
     },
 };
 

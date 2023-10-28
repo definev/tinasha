@@ -1,8 +1,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_websocket_client.h"
 
-#define VTS_WS_URI "ws://tinasha.loca.lt"
-
 typedef struct
 {
     int16_t *data;

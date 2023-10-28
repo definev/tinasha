@@ -20,7 +20,7 @@ menu "Example Configuration"
     
     config MICROPHONE_RECV_BUF_SIZE
         int "Microphone buffer size"
-        default 2400
+        default 1024 
         help
             Receiver buffer array size when using microphone
 
@@ -35,5 +35,11 @@ menu "Example Configuration"
         default 16
         help
             Sample bits of microphone
+    
+    config WS_URI
+        string "Websocket URI"
+        default "ws://tinasha.loca.lt"
+        help
+            Websocket URI to connect to server
 
 endmenu

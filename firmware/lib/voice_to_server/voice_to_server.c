@@ -1,4 +1,5 @@
 #include "voice_to_server.h"
+#include "sdkconfig.h"
 
 #include "esp_wifi.h"
 #include "esp_system.h"
@@ -15,7 +16,7 @@
 #include "esp_event.h"
 
 esp_websocket_client_config_t voice_to_server_client_cfg = {
-    .uri = VTS_WS_URI,
+    .uri = CONFIG_WS_URI,
     .disable_auto_reconnect = true,
     .reconnect_timeout_ms = 30000,
     .network_timeout_ms = 30000,
