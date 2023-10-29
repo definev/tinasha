@@ -17,10 +17,11 @@
 #include "esp_event.h"
 
 esp_websocket_client_config_t voice_to_server_client_cfg = {
-    .uri = CONFIG_WS_URI,
-    .disable_auto_reconnect = true,
-    .reconnect_timeout_ms = 30000,
-    .network_timeout_ms = 30000,
+    .uri = WS_URI,
+    .disable_auto_reconnect = false,
+    .buffer_size = I2S_BUFFER_SIZE * sizeof(int32_t),
+    .reconnect_timeout_ms = 30000000,
+    .network_timeout_ms = 3000000,
 };
 
 void voice_to_server_task(void *pvParameters)
@@ -31,7 +32,7 @@ void voice_to_server_task(void *pvParameters)
     {
         if (xQueueReceive(voice_to_server->queue, &data, portMAX_DELAY))
         {
-            voice_to_server_send(voice_to_server->client, data);
+            voice_to_server_send(voice_to_server->client, (char *)data, sizeof(data));
         }
         vTaskDelay(1);
     }
@@ -41,7 +42,7 @@ void setup_voice_to_server(voice_to_server_handle_t *handle)
 {
     voice_to_server_handle_t newHandle = voice_to_server_create(
         &voice_to_server_client_cfg,
-        xQueueCreate(10, sizeof(int16_t) * I2S_BUFFER_SIZE * 2));
+        xQueueCreate(10, sizeof(int16_t *)));
     *handle = newHandle;
     ESP_ERROR_CHECK(voice_to_server_init(handle));
 }
@@ -72,7 +73,7 @@ esp_err_t voice_to_server_init(voice_to_server_handle_t *handle)
     return ESP_OK;
 }
 
-void voice_to_server_send(esp_websocket_client_handle_t wsHandler, int16_t *data)
+void voice_to_server_send(esp_websocket_client_handle_t wsHandler, const char *data, size_t size)
 {
-    esp_websocket_client_send_bin(wsHandler, (char *)data, sizeof(data), portMAX_DELAY);
+    esp_websocket_client_send_bin(wsHandler, data, size, 500000);
 }

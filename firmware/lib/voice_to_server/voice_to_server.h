@@ -1,6 +1,8 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_websocket_client.h"
 
+#define WS_URI "ws://192.168.1.6:8080"
+
 typedef struct
 {
     esp_websocket_client_handle_t client;
@@ -15,4 +17,4 @@ voice_to_server_handle_t voice_to_server_create(esp_websocket_client_config_t *c
 
 esp_err_t voice_to_server_init(voice_to_server_handle_t *handle);
 
-void voice_to_server_send(esp_websocket_client_handle_t wsHandler, int16_t *data);
+void voice_to_server_send(esp_websocket_client_handle_t wsHandler, const char *data, size_t size);

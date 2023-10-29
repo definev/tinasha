@@ -6,6 +6,9 @@
         "compare": "c",
         "cstdint": "c",
         "microphone.h": "c",
-        "sdkconfig.h": "c"
+        "sdkconfig.h": "c",
+        "wifi_helper.h": "c",
+        "i2s.h": "c",
+        "gpio.h": "c"
     }
 }

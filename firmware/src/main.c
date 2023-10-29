@@ -22,44 +22,49 @@ i2s_chan_handle_t microphone_handle;
 i2s_chan_handle_t speaker_handle;
 voice_to_server_handle_t voice_to_server_handle;
 
-#define MAX_ALLOWED_OFFSET 16000
-#define MIC_OFFSET_AVERAGING_FRAMES 1
-#define VAD_MIC_EXTEND 5000 // ensure there's always another 5s after last VAD detected by server to avoid cutting off while talking
-
-volatile bool isPlaying = false;
-uint32_t mic_timeout = 0;
-
-int16_t mic_buff[I2S_CHUNK_SIZE];
-int16_t converted_mic_buff[I2S_CHUNK_SIZE];
+int16_t mic_buff[I2S_BUFFER_SIZE];
+void transform_mic_data(int16_t *data, size_t size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        data[i] = (int16_t)data[i] << 3;
+    }
+}
 
 size_t bytes_read;
 size_t bytes_written;
 
 void setup_i2s()
 {
-    i2s_chan_config_t i2s_chan_config = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+    i2s_chan_config_t microphone_i2s_chan_config = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
     i2s_std_config_t i2s_std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
-        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(I2S_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
+            .mclk = I2S_MASTER_CLOCK,
             .bclk = I2S_SERIAL_CLOCK,
             .ws = I2S_WORD_SELECT,
             .din = I2S_MIC_SERIAL_DATA,
-            .dout = I2S_SPEAKER_SERIAL_DATA,
-            .invert_flags = {
-                .bclk_inv = false,
-                .ws_inv = false,
-                .mclk_inv = false,
-            },
         },
     };
 
-    i2s_new_channel(&i2s_chan_config, NULL, &microphone_handle);
+    i2s_chan_config_t speaker_i2s_chan_config = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    i2s_std_config_t speaker_i2s_std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(I2S_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .gpio_cfg = {
+            .bclk = GPIO_NUM_48,
+            .ws = GPIO_NUM_45,
+            .dout = GPIO_NUM_47,
+        },
+    };
+
+    i2s_new_channel(&microphone_i2s_chan_config, NULL, &microphone_handle);
+    i2s_new_channel(&speaker_i2s_chan_config, &speaker_handle, NULL);
     i2s_channel_init_std_mode(microphone_handle, &i2s_std_cfg);
-    // i2s_channel_init_std_mode(speaker_handle, &i2s_std_cfg);
+    i2s_channel_init_std_mode(speaker_handle, &speaker_i2s_std_cfg);
     i2s_channel_enable(microphone_handle);
-    // i2s_channel_enable(speaker_handle);
+    i2s_channel_enable(speaker_handle);
 }
 
 void setup()
@@ -102,16 +107,10 @@ void repeat_microphone(void *arg)
         //     goto changeState;
         // }
         bytes_read = 0;
-
-        i2s_channel_read(microphone_handle, mic_buff, sizeof(mic_buff), &bytes_read, portMAX_DELAY);
-        printf("bytes_read: %d\n", bytes_read);
-        // TODO: Sending to server
-        for (int i = 0; i < I2S_CHUNK_SIZE; i++)
-        {
-            converted_mic_buff[i] = (int16_t)mic_buff[i] >> 1;
-        }
-        voice_to_server_send(voice_to_server_handle.client, converted_mic_buff);
-
+        i2s_channel_read(microphone_handle, mic_buff, I2S_BUFFER_SIZE, &bytes_read, portMAX_DELAY);
+        transform_mic_data(mic_buff, I2S_BUFFER_SIZE);
+        voice_to_server_send(voice_to_server_handle.client, (const char *)mic_buff, bytes_read);
+        i2s_channel_write(speaker_handle, mic_buff, I2S_BUFFER_SIZE, &bytes_written, portMAX_DELAY);
         vTaskDelay(1);
     }
 }
