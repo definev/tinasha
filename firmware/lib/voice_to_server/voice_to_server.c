@@ -1,4 +1,5 @@
 #include "voice_to_server.h"
+#include "i2s/i2s.h"
 #include "sdkconfig.h"
 
 #include "esp_wifi.h"
@@ -22,25 +23,17 @@ esp_websocket_client_config_t voice_to_server_client_cfg = {
     .network_timeout_ms = 30000,
 };
 
-voice_data_t voice_to_server_data_from_raw(int16_t *raw, uint32_t len)
-{
-    voice_data_t data = {
-        .data = raw,
-        .len = len,
-    };
-    return data;
-}
-
 void voice_to_server_task(void *pvParameters)
 {
     voice_to_server_handle_t *voice_to_server = (voice_to_server_handle_t *)pvParameters;
-    voice_data_t data;
+    int16_t *data;
     while (1)
     {
         if (xQueueReceive(voice_to_server->queue, &data, portMAX_DELAY))
         {
             voice_to_server_send(voice_to_server->client, data);
         }
+        vTaskDelay(1);
     }
 }
 
@@ -48,10 +41,9 @@ void setup_voice_to_server(voice_to_server_handle_t *handle)
 {
     voice_to_server_handle_t newHandle = voice_to_server_create(
         &voice_to_server_client_cfg,
-        xQueueCreate(10, sizeof(voice_data_t)));
+        xQueueCreate(10, sizeof(int16_t) * I2S_BUFFER_SIZE * 2));
     *handle = newHandle;
     ESP_ERROR_CHECK(voice_to_server_init(handle));
-    xTaskCreatePinnedToCore(&voice_to_server_task, "voice_to_server_task", 4096, handle, 1, NULL, 1);
 }
 
 voice_to_server_handle_t voice_to_server_create(esp_websocket_client_config_t *config, QueueHandle_t queue)
@@ -80,7 +72,7 @@ esp_err_t voice_to_server_init(voice_to_server_handle_t *handle)
     return ESP_OK;
 }
 
-void voice_to_server_send(esp_websocket_client_handle_t wsHandler, voice_data_t data)
+void voice_to_server_send(esp_websocket_client_handle_t wsHandler, int16_t *data)
 {
-    esp_websocket_client_send_bin(wsHandler, (char *)data.data, data.len, portMAX_DELAY);
+    esp_websocket_client_send_bin(wsHandler, (char *)data, sizeof(data), portMAX_DELAY);
 }
