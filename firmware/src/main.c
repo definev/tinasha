@@ -29,6 +29,7 @@ size_t bytes_written;
 
 void setup()
 {
+    wifi_helper_connect();
     microphone_init(&microphone_handle);
     voice_to_server_init(&voice_to_server_handle);
 }
@@ -48,9 +49,15 @@ void repeat_microphone(void *arg)
 
 void app_main()
 {
-    nvs_flash_init();
-    esp_netif_init();
-    wifi_helper_sta_connect();
+    // Initialize NVS
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
     setup();
 
     // xTaskCreatePinnedToCore(&voice_to_server_task, "voice_to_server_task", 4096, handle, 1, NULL, 1);
