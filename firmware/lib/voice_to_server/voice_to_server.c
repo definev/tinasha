@@ -16,6 +16,8 @@
 #include "esp_websocket_client.h"
 #include "esp_event.h"
 
+static const char *TAG = "voice_to_server";
+
 esp_websocket_client_config_t voice_to_server_client_cfg = {
     .uri = WS_URI,
     .disable_auto_reconnect = false,
@@ -32,33 +34,22 @@ void voice_to_server_task(void *pvParameters)
     {
         if (xQueueReceive(voice_to_server->queue, &data, portMAX_DELAY))
         {
-            voice_to_server_send(voice_to_server->client, (char *)data, sizeof(data));
+            ESP_LOGI(TAG, "Receving data : %d bytes", sizeof(data));
+            esp_websocket_client_send_bin(voice_to_server->client, (const char *)data, sizeof(data), portMAX_DELAY);
         }
         vTaskDelay(1);
     }
 }
 
-void setup_voice_to_server(voice_to_server_handle_t *handle)
-{
-    voice_to_server_handle_t newHandle = voice_to_server_create(
-        &voice_to_server_client_cfg,
-        xQueueCreate(10, sizeof(int16_t *)));
-    *handle = newHandle;
-    ESP_ERROR_CHECK(voice_to_server_init(handle));
-}
-
-voice_to_server_handle_t voice_to_server_create(esp_websocket_client_config_t *config, QueueHandle_t queue)
-{
-    esp_websocket_client_handle_t client = esp_websocket_client_init(config);
-    voice_to_server_handle_t handle = {
-        .client = client,
-        .queue = queue,
-    };
-    return handle;
-}
-
 esp_err_t voice_to_server_init(voice_to_server_handle_t *handle)
 {
+    esp_websocket_client_handle_t client = esp_websocket_client_init(&voice_to_server_client_cfg);
+    voice_to_server_handle_t new_handle = {
+        .client = client,
+        .queue = xQueueCreate(10, sizeof(int16_t *)),
+    };
+
+    *handle = new_handle;
     esp_err_t err = esp_websocket_client_start(handle->client);
     if (err != ESP_OK)
     {
@@ -73,7 +64,7 @@ esp_err_t voice_to_server_init(voice_to_server_handle_t *handle)
     return ESP_OK;
 }
 
-void voice_to_server_send(esp_websocket_client_handle_t wsHandler, const char *data, size_t size)
+void voice_to_server_send(voice_to_server_handle_t handle, const char *data, size_t size)
 {
-    esp_websocket_client_send_bin(wsHandler, data, size, 500000);
+    xQueueSend(handle.queue, data, portMAX_DELAY);
 }

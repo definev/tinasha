@@ -9,6 +9,8 @@
         "sdkconfig.h": "c",
         "wifi_helper.h": "c",
         "i2s.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "voice_to_server.h": "c",
+        "esp_wifi.h": "c"
     }
 }
