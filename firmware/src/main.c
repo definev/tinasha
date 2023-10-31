@@ -1,10 +1,9 @@
-#include "sdkconfig.h"
 #include "i2s/i2s.h"
+#include "sdkconfig.h"
 #include "wifi_helper.h"
 #include "voice_to_server.h"
-#include "vts_protocol/ws.h"
+#include "vts_protocol/udp.h"
 #include "microphone.h"
-#include "array_convert.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -34,8 +33,8 @@ void setup()
 {
     wifi_helper_connect();
     microphone_init(&microphone_handle);
-
-    voice_to_server_ws_setup();
+    // voice_to_server_ws_setup();
+    voice_to_server_udp_setup();
 }
 
 void repeat_microphone(void *arg)
@@ -46,7 +45,8 @@ void repeat_microphone(void *arg)
     {
         bytes_read = 0;
         microphone_read(microphone_handle, mic_buff, I2S_BUFFER_SIZE, &bytes_read);
-        voice_to_server_ws_callback((char *)mic_buff, bytes_read);
+        // voice_to_server_ws_callback((char *)mic_buff, bytes_read);
+        voice_to_server_udp_callback((char *)mic_buff, bytes_read);
         vTaskDelay(1);
     }
 }

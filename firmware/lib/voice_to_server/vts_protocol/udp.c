@@ -22,32 +22,33 @@ int voice_to_server_udp_init()
 {
     if (curr_sock < 0)
     {
-        ESP_LOGI(TAG, "Socket already created");
+        int sock = lwip_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        if (sock < 0)
+        {
+            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+            return -1;
+        }
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+        {
+            ESP_LOGE(TAG, "error in setsockopt SO_RCVTIMEO (%d)", errno);
+            return -1;
+        }
+
+        int keep_alive = 1;
+        if (lwip_setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)) < 0)
+        {
+            ESP_LOGE(TAG, "error in setsockopt SO_KEEPALIVE (%d)", errno);
+            return -1;
+        }
+
+        ESP_LOGI(TAG, "Socket created, sending to %s:%d", CONFIG_VTS_UDP_SERVER_IP, CONFIG_VTS_UDP_SERVER_PORT);
+        return sock;
+    }
+    else
+    {
         return curr_sock;
     }
 
-    int sock = lwip_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock < 0)
-    {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-        goto exit;
-    }
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
-    {
-        ESP_LOGE(TAG, "error in setsockopt SO_RCVTIMEO (%d)", errno);
-        goto exit;
-    }
-
-    int keep_alive = 1;
-    if (lwip_setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)) < 0)
-    {
-        ESP_LOGE(TAG, "error in setsockopt SO_KEEPALIVE (%d)", errno);
-        goto exit;
-    }
-
-    ESP_LOGI(TAG, "Socket created, sending to %s:%d", CONFIG_VTS_UDP_SERVER_IP, CONFIG_VTS_UDP_SERVER_PORT);
-
-exit:
     return -1;
 }
 
@@ -86,7 +87,6 @@ void voice_to_server_udp_callback(char *data, size_t size)
         }
         else
         {
-            ESP_LOGI(TAG, "Data sent");
             break;
         }
     }
