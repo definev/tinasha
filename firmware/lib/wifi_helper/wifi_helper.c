@@ -179,7 +179,7 @@ esp_err_t wifi_helper_connect(void)
 // 	bzero(readBuffer, sizeof(readBuffer));
 //     int r = read(sock, readBuffer, sizeof(readBuffer)-1);
 //     for(int i = 0; i < r; i++) {
-//         putchar(readBuffer[i]);
+//         putint8_t(readBuffer[i]);
 //     }
 
 //     if (strcmp(readBuffer, "HELLO") == 0)

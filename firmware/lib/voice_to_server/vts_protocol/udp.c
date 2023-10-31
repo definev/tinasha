@@ -73,14 +73,12 @@ void voice_to_server_udp_setup()
     }
 }
 
-void voice_to_server_udp_callback(void *data, size_t size)
+void voice_to_server_udp_callback(char *data, size_t size)
 {
     curr_sock = voice_to_server_udp_init();
-    lwip_write(curr_sock, data, size);
     int retry_count = 0;
     while (1)
     {
-
         if (lwip_sendto(curr_sock, data, size, 0, (struct sockaddr *)&udp_server_addr, sizeof(udp_server_addr)) < 0)
         {
             ESP_LOGE(TAG, "Unable to send data: errno %d", errno);

@@ -34,5 +34,5 @@ void speaker_setup(i2s_chan_handle_t *speaker_handle)
 
 void speaker_write(i2s_chan_handle_t speaker_handle, char *data, size_t *bytes_written)
 {
-    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, data, I2S_TX_SAMPLE_SIZE, bytes_written, CONFIG_MAX_TIMEOUT));
+    ESP_ERROR_CHECK(i2s_channel_write(speaker_handle, data, I2S_BUFFER_SIZE, bytes_written, CONFIG_MAX_TIMEOUT));
 }

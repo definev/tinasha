@@ -1,6 +1,8 @@
 #ifndef VTS_UDP_H
 #define VTS_UDP_H
 
+#include "voice_to_server.h"
+
 #include "freertos/FreeRTOS.h"
 
 #define MAX_UDP_PACKET_SIZE 512
@@ -16,7 +18,7 @@
  * @param data Pointer to the received UDP data.
  * @param size Size of the received UDP data.
  */
-void voice_to_server_udp_callback(void *data, size_t size);
+void voice_to_server_udp_callback(char *data, size_t size);
 
 void voice_to_server_udp_setup();
 

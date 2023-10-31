@@ -13,6 +13,8 @@
         "voice_to_server.h": "c",
         "esp_wifi.h": "c",
         "udp.h": "c",
-        "queue.h": "c"
+        "queue.h": "c",
+        "esp_event.h": "c",
+        "freertos.h": "c"
     }
 }
