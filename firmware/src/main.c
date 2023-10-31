@@ -2,9 +2,11 @@
 #include "i2s/i2s.h"
 #include "wifi_helper.h"
 #include "voice_to_server.h"
+#include "vts_protocol/ws.h"
 #include "microphone.h"
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 
 #include "nvs_flash.h"
@@ -31,7 +33,13 @@ void setup()
 {
     wifi_helper_connect();
     microphone_init(&microphone_handle);
-    voice_to_server_init(&voice_to_server_handle);
+
+    voice_to_server_handle_t new_voice_to_server_handle = {
+        .queue = xQueueCreate(10, sizeof(int16_t *)),
+        .callback = &voice_to_server_ws_callback,
+    };
+    voice_to_server_handle = new_voice_to_server_handle;
+    voice_to_server_ws_setup();
 }
 
 void repeat_microphone(void *arg)

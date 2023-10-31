@@ -42,4 +42,16 @@ menu "Example Configuration"
         help
             Websocket URI to connect to server
 
+    config VTS_UDP_SERVER_IP
+        string "VTS UDP server IP"
+        default "192.168.1.6"
+        help
+            IP address of voice to server server
+
+    config VTS_UDP_SERVER_PORT
+        int "VTS UDP server port"
+        default 5000
+        help
+            UDP port to send data to voice to server server
+
 endmenu

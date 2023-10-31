@@ -11,6 +11,8 @@
         "i2s.h": "c",
         "gpio.h": "c",
         "voice_to_server.h": "c",
-        "esp_wifi.h": "c"
+        "esp_wifi.h": "c",
+        "udp.h": "c",
+        "queue.h": "c"
     }
 }
