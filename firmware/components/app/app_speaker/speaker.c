@@ -1,6 +1,6 @@
 #include "sdkconfig.h"
-#include "i2s/i2s.h"
-#include "speaker.h"
+#include "app/i2s.h"
+#include "app/speaker.h"
 
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s_std.h"

@@ -1,6 +1,6 @@
 #include "sdkconfig.h"
-#include "microphone.h"
-#include "i2s/i2s.h"
+#include "app/microphone.h"
+#include "app/i2s.h"
 
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s_std.h"

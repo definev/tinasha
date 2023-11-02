@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "wifi_helper.h"
+#include "app/wifi_helper.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

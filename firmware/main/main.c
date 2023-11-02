@@ -1,9 +1,10 @@
-#include "i2s/i2s.h"
+#include "app/i2s.h"
+#include "app/wifi_helper.h"
+#include "app/voice_to_server.h"
+#include "app/vts_protocol/udp.h"
+#include "app/microphone.h"
+
 #include "sdkconfig.h"
-#include "wifi_helper.h"
-#include "voice_to_server.h"
-#include "vts_protocol/udp.h"
-#include "microphone.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -16,6 +17,7 @@
 #include "esp_event.h"
 #include "driver/i2s_std.h"
 #include "driver/i2s_types.h"
+
 
 #define millis() (esp_timer_get_time() / 1000)
 

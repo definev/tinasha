@@ -1,5 +1,5 @@
-#include "voice_to_server.h"
-#include "i2s/i2s.h"
+#include "app/voice_to_server.h"
+#include "app/i2s.h"
 #include "sdkconfig.h"
 
 #include "esp_wifi.h"

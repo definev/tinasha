@@ -1,7 +1,7 @@
 #ifndef VTS_UDP_H
 #define VTS_UDP_H
 
-#include "voice_to_server.h"
+#include "app/voice_to_server.h"
 
 #include "freertos/FreeRTOS.h"
 

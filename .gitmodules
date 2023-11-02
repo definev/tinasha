@@ -1,0 +1,4 @@
+[submodule "firmware/lib/esp-adf"]
+	path = firmware/lib/esp-adf
+	url = git@github.com:espressif/esp-adf.git
+	branch = v2.6
