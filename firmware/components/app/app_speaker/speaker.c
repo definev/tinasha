@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "sdkconfig.h"
 #include "app/i2s.h"
 #include "app/speaker.h"
@@ -6,9 +8,43 @@
 #include "driver/i2s_std.h"
 #include "driver/i2s_common.h"
 #include "esp_err.h"
+#include "esp_log.h"
+#include "esp_heap_caps.h"
 
-void speaker_setup(i2s_chan_handle_t *speaker_handle)
+// how many samples to load from TCP before starting playing (avoid jitter due to running out of data w/ bad wifi)
+#ifdef CONFIG_SOC_GDMA_SUPPORT_PSRAM
+int bufferThreshold = 8192;
+#else
+int bufferThreshold = 512;
+#endif
+
+static const char *TAG = "speaker";
+
+void speaker_setup(i2s_chan_handle_t *speaker_handle, int32_t *wav_data)
 {
+    /* Initialize WAV form */
+    size_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    size_t total_psram = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+
+    ESP_LOGI(TAG, "PSRAM free: %d", free_psram);
+    ESP_LOGI(TAG, "PSRAM total: %d", total_psram);
+    ESP_LOGI(TAG, "PSRAM used: %d", total_psram - free_psram);
+
+    wav_data = (int32_t *)malloc((2 * 1024 * 1024) / sizeof(int32_t));
+    if (wav_data == NULL)
+    {
+        ESP_LOGE(TAG, "Memory allocation failed!");
+        while (1)
+            ;
+    }
+    else
+    {
+        ESP_LOGI(TAG, "Memory allocation successful!");
+    }
+    free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    ESP_LOGI(TAG, "PSRAM used: %d", total_psram - free_psram);
+
+    /* Initialize speaker */
     i2s_chan_config_t speaker_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     ESP_ERROR_CHECK(i2s_new_channel(&speaker_chan_cfg, speaker_handle, NULL));
 

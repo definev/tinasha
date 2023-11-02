@@ -3,6 +3,7 @@
 #include "app/voice_to_server.h"
 #include "app/vts_protocol/udp.h"
 #include "app/microphone.h"
+#include "app/speaker.h"
 
 #include "sdkconfig.h"
 
@@ -18,12 +19,12 @@
 #include "driver/i2s_std.h"
 #include "driver/i2s_types.h"
 
-
 #define millis() (esp_timer_get_time() / 1000)
 
 static const char *TAG = "app_main";
 
 i2s_chan_handle_t microphone_handle;
+i2s_chan_handle_t speaker_handle;
 voice_to_server_handle_t voice_to_server_handle;
 
 int16_t mic_buff[I2S_BUFFER_SIZE];
@@ -31,11 +32,13 @@ size_t bytes_read;
 
 size_t bytes_written;
 
+int32_t *wav_data = NULL;
+
 void setup()
 {
     wifi_helper_connect();
-    microphone_init(&microphone_handle);
-    // voice_to_server_ws_setup();
+    microphone_setup(&microphone_handle);
+    speaker_setup(&speaker_handle, wav_data);
     voice_to_server_udp_setup();
 }
 
