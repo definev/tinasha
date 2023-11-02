@@ -11,7 +11,7 @@
 
 /* Microphone GPIO PIN definitions */
 
-void microphone_init(i2s_chan_handle_t *handle);
+void microphone_setup(i2s_chan_handle_t *handle);
 
 void microphone_read(i2s_chan_handle_t handler, void *mic_buffer, size_t buffer_size, size_t *bytes_read);
 

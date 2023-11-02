@@ -18,7 +18,7 @@ void transform_mic_data(int16_t *data, size_t size)
     }
 }
 
-void microphone_init(i2s_chan_handle_t *handle)
+void microphone_setup(i2s_chan_handle_t *handle)
 {
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
     i2s_std_config_t i2s_std_cfg = {
