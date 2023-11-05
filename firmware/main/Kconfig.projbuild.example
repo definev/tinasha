@@ -53,5 +53,11 @@ menu "Example Configuration"
         default 5000
         help
             UDP port to send data to voice to server server
+    
+    config TINASHA_TCP_SERVER_PORT
+        int "Tinasha TCP server port"
+        default 4444
+        help
+            TCP port to send data to Tinasha server
 
 endmenu
