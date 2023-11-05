@@ -22,11 +22,15 @@ int voice_to_server_udp_init()
 {
     if (curr_sock < 0)
     {
-        int sock = lwip_socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
         if (sock < 0)
         {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             return -1;
+        }
+        else
+        {
+            ESP_LOGI(TAG, "Socket created");
         }
         if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
         {
@@ -35,7 +39,7 @@ int voice_to_server_udp_init()
         }
 
         int keep_alive = 1;
-        if (lwip_setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)) < 0)
+        if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)) < 0)
         {
             ESP_LOGE(TAG, "error in setsockopt SO_KEEPALIVE (%d)", errno);
             return -1;
@@ -52,13 +56,13 @@ int voice_to_server_udp_init()
     return -1;
 }
 
-void voice_to_server_udp_setup()
+void voice_to_server_udp_setup(voice_to_server_udp_config_t config)
 {
     udp_server_addr
         .sin_addr
-        .s_addr = inet_addr(CONFIG_VTS_UDP_SERVER_IP);
+        .s_addr = config.ip_addr;
     udp_server_addr
-        .sin_port = htons(CONFIG_VTS_UDP_SERVER_PORT);
+        .sin_port = htons(config.port);
     udp_server_addr
         .sin_family = AF_INET;
 
@@ -74,14 +78,14 @@ void voice_to_server_udp_setup()
     }
 }
 
-void voice_to_server_udp_callback(char *data, size_t size)
+void voice_to_server_udp_callback(void *data, size_t size)
 {
     curr_sock = voice_to_server_udp_init();
-    int retry_count = 0;
     while (1)
     {
-        if (lwip_sendto(curr_sock, data, size, 0, (struct sockaddr *)&udp_server_addr, sizeof(udp_server_addr)) < 0)
+        if (sendto(curr_sock, data, size, 0, (struct sockaddr *)&udp_server_addr, sizeof(udp_server_addr)) < 0)
         {
+            curr_sock = -1;
             ESP_LOGE(TAG, "Unable to send data: errno %d", errno);
             curr_sock = voice_to_server_udp_init();
         }
