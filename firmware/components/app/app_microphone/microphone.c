@@ -20,12 +20,11 @@ void transform_mic_data(int16_t *data, size_t size)
 
 void microphone_setup(i2s_chan_handle_t *handle)
 {
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     i2s_std_config_t i2s_std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(I2S_SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(MICROPHONE_DATA_WIDTH, MICROPHONE_SLOT_MODE),
         .gpio_cfg = {
-            .mclk = I2S_MASTER_CLOCK,
             .bclk = I2S_SERIAL_CLOCK,
             .ws = I2S_WORD_SELECT,
             .din = I2S_MIC_SERIAL_DATA,
@@ -47,5 +46,5 @@ void microphone_setup(i2s_chan_handle_t *handle)
 
 void microphone_read(i2s_chan_handle_t handler, void *mic_buffer, size_t buffer_size, size_t *bytes_read)
 {
-    ESP_ERROR_CHECK(i2s_channel_read(handler, mic_buffer, buffer_size, bytes_read, CONFIG_MAX_TIMEOUT));
+    ESP_ERROR_CHECK(i2s_channel_read(handler, mic_buffer, buffer_size, bytes_read, portMAX_DELAY));
 }

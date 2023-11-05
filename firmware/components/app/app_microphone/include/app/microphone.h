@@ -6,8 +6,8 @@
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s_std.h"
 
-#define MICROPHONE_DATA_WIDTH I2S_DATA_BIT_WIDTH_16BIT
-#define MICROPHONE_SLOT_MODE I2S_SLOT_MODE_STEREO
+#define MICROPHONE_DATA_WIDTH I2S_DATA_BIT_WIDTH_32BIT
+#define MICROPHONE_SLOT_MODE I2S_SLOT_MODE_MONO
 
 /* Microphone GPIO PIN definitions */
 
