@@ -49,19 +49,12 @@ void speaker_setup(i2s_chan_handle_t *speaker_handle, int32_t *wav_data)
     ESP_ERROR_CHECK(i2s_new_channel(&speaker_chan_cfg, speaker_handle, NULL));
 
     i2s_std_config_t speaker_std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(16000),
-        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(I2S_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_BIT_PER_SAMPLE, I2S_MONO_OR_STEREO),
         .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,
             .bclk = I2S_SERIAL_CLOCK,
             .ws = I2S_WORD_SELECT,
-            .din = I2S_GPIO_UNUSED,
             .dout = I2S_SPEAKER_SERIAL_DATA,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = true,
-                .ws_inv = false,
-            },
         },
     };
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(*speaker_handle, &speaker_std_cfg));
