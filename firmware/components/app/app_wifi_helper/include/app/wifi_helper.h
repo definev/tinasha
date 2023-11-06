@@ -1,6 +1,7 @@
 #ifndef WIFI_HELPER_H
 #define WIFI_HELPER_H
 
+#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
 #define WIFI_HELPER_NETIF_DESC_STA "Tinasha STA"
@@ -17,6 +18,11 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
-esp_err_t wifi_helper_connect(void);
+typedef struct
+{
+   uint32_t ip_addr;
+} wifi_helper_status_t;
+
+esp_err_t wifi_helper_connect(wifi_helper_status_t *status);
 
 #endif

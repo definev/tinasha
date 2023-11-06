@@ -28,16 +28,11 @@ int voice_to_server_udp_init()
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             return -1;
         }
-        else
-        {
-            ESP_LOGI(TAG, "Socket created");
-        }
         if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
         {
             ESP_LOGE(TAG, "error in setsockopt SO_RCVTIMEO (%d)", errno);
             return -1;
         }
-
         int keep_alive = 1;
         if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &keep_alive, sizeof(keep_alive)) < 0)
         {

@@ -49,17 +49,19 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 static void ip_event_handler(void *arg, esp_event_base_t event_base,
                              int32_t event_id, void *event_data)
 {
+    wifi_helper_status_t *helper_status = (wifi_helper_status_t *)arg;
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "STA IP: " IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+        helper_status->ip_addr = event->ip_info.ip.addr;
     }
 }
 
 // connect to wifi and return the result
-esp_err_t wifi_helper_connect(void)
+esp_err_t wifi_helper_connect(wifi_helper_status_t *helper_status)
 {
     int status = WIFI_FAIL_BIT;
 
@@ -91,7 +93,7 @@ esp_err_t wifi_helper_connect(void)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                                                         IP_EVENT_STA_GOT_IP,
                                                         &ip_event_handler,
-                                                        NULL,
+                                                        (void *)wifi_event_group,
                                                         &got_ip_event_instance));
 
     /** START THE WIFI DRIVER **/
@@ -135,11 +137,6 @@ esp_err_t wifi_helper_connect(void)
     else if (bits & WIFI_FAIL_BIT)
     {
         ESP_LOGI(TAG, "Failed to connect to ap");
-        status = WIFI_FAIL_BIT;
-    }
-    else
-    {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
         status = WIFI_FAIL_BIT;
     }
 
