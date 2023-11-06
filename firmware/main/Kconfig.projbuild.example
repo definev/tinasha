@@ -60,7 +60,7 @@ menu "Example Configuration"
         help
             TCP port to send data to Tinasha server
 
-    config CONFIG_TCP_BUFFER_SIZE
+    config TCP_BUFFER_SIZE
         int "TCP buffer size"
         default 512
         help
