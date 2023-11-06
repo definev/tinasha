@@ -10,10 +10,7 @@ static const char *TAG = "vts_ws";
 
 static esp_websocket_client_config_t voice_to_server_client_cfg = {
     .uri = CONFIG_WS_URI,
-    .disable_auto_reconnect = false,
     .buffer_size = I2S_BUFFER_SIZE * I2S_SIZE_PER_SAMPLE,
-    .reconnect_timeout_ms = 3000,
-    .network_timeout_ms = 30000000,
 };
 esp_websocket_client_handle_t client;
 

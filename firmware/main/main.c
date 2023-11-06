@@ -1,9 +1,9 @@
 #include "app/i2s.h"
 #include "app/wifi_helper.h"
 #include "app/voice_to_server.h"
-#include "app/vts_protocol/udp.h"
+#include "app/vts_protocol/ws.h"
 #include "app/microphone.h"
-#include "app/speaker.h"
+// #include "app/speaker.h"
 
 #include "sdkconfig.h"
 
@@ -17,8 +17,7 @@
 #include "esp_timer.h"
 #include "esp_event.h"
 #include "sys/socket.h"
-#include "driver/i2s_std.h"
-#include "driver/i2s_types.h"
+#include "driver/i2s.h"
 
 #define millis() (esp_timer_get_time() / 1000)
 #define CREATE_TCP_SERVER() socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
@@ -68,8 +67,7 @@ app_state_t app_state = {
     .wifi_status = NULL,
 };
 
-i2s_chan_handle_t microphone_handle;
-i2s_chan_handle_t speaker_handle;
+// i2s_chan_handle_t speaker_handle;
 voice_to_server_handle_t voice_to_server_handle;
 
 int16_t mic_buff[I2S_BUFFER_SIZE];
@@ -85,9 +83,9 @@ void repeat_microphone(void *arg)
     while (1)
     {
         bytes_read = 0;
-        microphone_read(microphone_handle, mic_buff, sizeof(mic_buff), &bytes_read);
+        microphone_read(mic_buff, sizeof(mic_buff), &bytes_read);
         {
-            voice_to_server_udp_callback(mic_buff, bytes_read);
+            voice_to_server_ws_callback((char *)mic_buff, bytes_read);
         }
     }
 }
@@ -108,12 +106,13 @@ void setup()
     }
 
     wifi_helper_connect(app_state.wifi_status);
-    microphone_setup(&microphone_handle);
-    speaker_setup(&speaker_handle, wav_data);
-    voice_to_server_udp_setup((voice_to_server_udp_config_t){
-        .ip_addr = app_state.wifi_status->ip_addr,
-        .port = CONFIG_VTS_UDP_SERVER_PORT,
-    });
+    microphone_setup();
+    // speaker_setup(&speaker_handle, wav_data);
+    // voice_to_server_udp_setup((voice_to_server_udp_config_t){
+    //     .ip_addr = app_state.wifi_status->ip_addr,
+    //     .port = CONFIG_VTS_UDP_SERVER_PORT,
+    // });
+    voice_to_server_ws_setup();
 
     {
         xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
@@ -121,11 +120,11 @@ void setup()
 }
 
 struct sockaddr_in dest_addr = {
-    .sin_addr.s_addr = htonl(INADDR_ANY),
+    .sin_addr.s_addr = INADDR_ANY,
     .sin_family = AF_INET,
-    .sin_port = htons(CONFIG_TINASHA_TCP_SERVER_PORT),
+    .sin_port = CONFIG_TINASHA_TCP_SERVER_PORT,
 };
-static uint8_t header[6];
+static uint8_t app_header[6];
 static int tcp_server_id = -1;
 static struct sockaddr_in remote_addr;
 static unsigned int socklen = sizeof(remote_addr);
@@ -163,11 +162,11 @@ void loop()
 
     while (1)
     {
-        int tcp_client_id = accept(tcp_server_id, (struct sockaddr *)&remote_addr, socklen);
+        int tcp_client_id = accept(tcp_server_id, (struct sockaddr *)&remote_addr, &socklen);
 
         //----- A CLIENT HAS CONNECTED -----
         ESP_LOGI(TAG, "New client connection");
-        int received_bytes = recv(tcp_client_id, header, 6, MSG_PEEK);
+        int received_bytes = recv(tcp_client_id, app_header, 6, MSG_PEEK);
         if (received_bytes == 0)
         {
             ESP_LOGI(TAG, "Failed to read header");
@@ -182,26 +181,26 @@ void loop()
         }
         else
         {
-            log_header_buffer(header);
-            switch (header[0])
+            log_header_buffer(app_header);
+            switch (app_header[0])
             {
             case HEADER_TYPE_RECEIVE_WAV:
-                uint16_t timeout = header[1] << 8 | header[2];
-                ESP_LOGI(TAG, "Received audio with mic timeout of %d seconds and volume of %d\n", timeout, volume);
-                app_state.on_playing = true;
+                // int app_timeout = app_header[1] << 8 | app_header[2];
+                // ESP_LOGI(TAG, "Received audio with mic timeout of %d seconds and volume of %d\n", app_timeout, volume);
+                // app_state.on_playing = true;
 
-                bool initialBufferFilled = false; // get a nice reservoir loaded into wavData to try avoid jitter
-                uint32_t tic = millis();
-                size_t totalSamplesRead = 0;
+                // bool initialBufferFilled = false; // get a nice reservoir loaded into wavData to try avoid jitter
+                // uint32_t tic = millis();
+                // size_t totalSamplesRead = 0;
 
-                size_t bytes_available, bytes_to_read, read_bytes, bytes_written, bytes_to_write;
-                int16_t sample16;
+                // size_t bytes_available, bytes_to_read, read_bytes, bytes_written, bytes_to_write;
+                // int16_t sample16;
 
-                while (1)
-                {
-                    uint8_t tcp_buffer[CONFIG_TCP_BUFFER_SIZE];
-                    read_bytes = recv(tcp_client_id, tcp_buffer, CONFIG_TCP_BUFFER_SIZE, MSG_PEEK);
-                }
+                // while (1)
+                // {
+                //     uint8_t tcp_buffer[CONFIG_TCP_BUFFER_SIZE];
+                //     read_bytes = recv(tcp_client_id, tcp_buffer, CONFIG_TCP_BUFFER_SIZE, MSG_PEEK);
+                // }
 
                 break;
             case HEADER_TYPE_ADJUST_VOLUME:
@@ -214,8 +213,8 @@ void loop()
 void app_main()
 {
     setup();
-    while (1)
-    {
-        loop();
-    }
+    // while (1)
+    // {
+    //     loop();
+    // }
 }

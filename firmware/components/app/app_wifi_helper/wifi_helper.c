@@ -65,13 +65,6 @@ esp_err_t wifi_helper_connect(wifi_helper_status_t *helper_status)
 {
     int status = WIFI_FAIL_BIT;
 
-    /** INITIALIZE ALL THE THINGS **/
-    // initialize the esp network interface
-    ESP_ERROR_CHECK(esp_netif_init());
-
-    // initialize default esp event loop
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
     // create wifi station in the wifi driver
     esp_netif_create_default_wifi_sta();
 
