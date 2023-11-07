@@ -14,6 +14,7 @@
 
 #include "nvs_flash.h"
 #include "esp_netif.h"
+#include "esp_mac.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_event.h"
@@ -103,6 +104,7 @@ void setup()
             .uri = CONFIG_WS_URI,
             .buffer_size = VTS_WS_BUFFER_SIZE,
         });
+
     tcp_server_handle = tcp_server_setup(
         (tcp_server_config_t){
             .port = CONFIG_TINASHA_TCP_SERVER_PORT,
@@ -119,7 +121,7 @@ size_t available_bytes;
 uint8_t tcp_buff[CONFIG_TCP_BUFFER_SIZE];
 size_t buffer_threshold = 8192;
 
-void _handle_receive_wav_header(uint8_t header)
+void _handle_receive_wav_header(uint8_t *header)
 {
     static size_t total_sample_read = 0;
     static size_t bytes_to_read, bytes_read, bytes_to_write, bytes_written;
@@ -192,7 +194,8 @@ void tcp_server_event_handler()
         _handle_receive_wav_header(app_header);
         break;
     case HEADER_TYPE_ADJUST_VOLUME:
-        _handle_adjust_volume_header(app_header);
+        // _handle_adjust_volume_header(app_header);
+        break;
     }
 }
 
@@ -203,5 +206,4 @@ void app_main()
     {
         tcp_server_event_handler();
     }
-    
 }

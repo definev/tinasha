@@ -5,9 +5,15 @@
 
 static const char *TAG = "tcp_server";
 
-tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, struct sockaddr_storage local_addr)
+tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, uint32_t local_addr)
 {
-    tcp_server_handle_t tcp_server_handle = {.sock_fd = -1};
+    tcp_server_handle_t tcp_server_handle = {
+        .sock_fd = -1,
+        .local_addr = (struct sockaddr_in){
+            .sin_family = AF_INET,
+            .sin_port = htons(80),                // Port number 80 in network byte order
+            .sin_addr.s_addr = htonl(local_addr), // IP address
+        }};
     tcp_server_handle.sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (tcp_server_handle.sock_fd < 0)
     {
@@ -19,6 +25,7 @@ tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, struct sockaddr
         ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
         return tcp_server_handle;
     }
+
     return tcp_server_handle;
 }
 
@@ -95,7 +102,7 @@ void tcp_server_find_client(tcp_server_handle_t *tcp_server_handle)
         sizeof(tcp_server_handle->remote_addr));
 }
 
-size_t tcp_server_receive_header(tcp_server_handle_t *tcp_server_handle, char *header)
+size_t tcp_server_receive_header(tcp_server_handle_t *tcp_server_handle, uint8_t *header)
 {
     return tcp_server_receive_data(tcp_server_handle, (uint8_t *)header, 6);
 }

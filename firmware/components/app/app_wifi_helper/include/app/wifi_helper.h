@@ -6,7 +6,7 @@
 
 #include "lwip/sockets.h"
 
-#define WIFI_HELPER_NETIF_DESC_STA "Tinasha STA"
+#define WIFI_HELPER_NETIF_DESC_STA "tinasha-speaker"
 /* The examples use WiFi configuration that you can set via project configuration menu
 
    If you'd rather not, just change the below entries to strings with
@@ -22,7 +22,7 @@
 
 typedef struct
 {
-   struct sockaddr_storage ip_addr;
+   uint32_t ip_addr;
 } wifi_helper_handle_t;
 
 esp_err_t wifi_helper_connect(wifi_helper_handle_t *status);

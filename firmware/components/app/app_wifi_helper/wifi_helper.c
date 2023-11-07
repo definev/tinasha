@@ -49,24 +49,25 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 static void ip_event_handler(void *arg, esp_event_base_t event_base,
                              int32_t event_id, void *event_data)
 {
-    wifi_helper_handle_t *helper_status = (wifi_helper_handle_t *)arg;
+    wifi_helper_handle_t *handle = (wifi_helper_handle_t *)arg;
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "STA IP: " IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
-        helper_status->ip_addr = event->ip_info.ip.addr;
+        handle->ip_addr = event->ip_info.ip.addr;
     }
 }
 
 // connect to wifi and return the result
-esp_err_t wifi_helper_connect(wifi_helper_handle_t *helper_status)
+esp_err_t wifi_helper_connect(wifi_helper_handle_t *handle)
 {
     int status = WIFI_FAIL_BIT;
 
     // create wifi station in the wifi driver
-    esp_netif_create_default_wifi_sta();
+    esp_netif_t *netif = esp_netif_create_default_wifi_sta();
+    esp_netif_set_hostname(netif, WIFI_HELPER_NETIF_DESC_STA);
 
     // setup wifi station with the default wifi configuration
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
