@@ -5,7 +5,7 @@
 
 static const char *TAG = "tcp_server";
 
-tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, struct sockaddr_storage local_addr);
+tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, struct sockaddr_storage local_addr)
 {
     tcp_server_handle_t tcp_server_handle = {.sock_fd = -1};
     tcp_server_handle.sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
@@ -14,22 +14,27 @@ tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, struct sockaddr
         ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
         return tcp_server_handle;
     }
+    if (bind(tcp_server_handle.sock_fd, (struct sockaddr *)&local_addr, sizeof(local_addr)) != 0)
+    {
+        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
+        return tcp_server_handle;
+    }
     return tcp_server_handle;
 }
 
-int tcp_server_available_bytes(tcp_server_handle_t tcp_server_handle)
+int tcp_server_ready_to_read(tcp_server_handle_t *tcp_server_handle)
 {
-    if (tcp_server_handle.sock_fd < 0)
+    if (tcp_server_handle->sock_fd < 0)
     {
         ESP_LOGE(TAG, "Socket not created");
         return -1;
     }
-    int bytes_available = 0;
-    ioctl(tcp_server_handle.sock_fd, FIONREAD, &bytes_available);
+    static int bytes_available = 0;
+    ioctl(tcp_server_handle->sock_fd, FIONREAD, &bytes_available);
     return bytes_available;
 }
 
-bool tcp_server_connection(tcp_server_handle_t *tcp_server_handle)
+bool tcp_server_is_client_alive(tcp_server_handle_t *tcp_server_handle)
 {
     if (tcp_server_handle->connected)
     {
@@ -80,4 +85,22 @@ void tcp_server_listen(tcp_server_handle_t tcp_server_handle)
 void tcp_server_stop(tcp_server_handle_t tcp_server_handle)
 {
     close(tcp_server_handle.sock_fd);
+}
+
+void tcp_server_find_client(tcp_server_handle_t *tcp_server_handle)
+{
+    tcp_server_handle->client_sock_fd = accept(
+        tcp_server_handle->sock_fd,
+        (struct sockaddr *)&tcp_server_handle->remote_addr,
+        sizeof(tcp_server_handle->remote_addr));
+}
+
+size_t tcp_server_receive_header(tcp_server_handle_t *tcp_server_handle, char *header)
+{
+    return tcp_server_receive_data(tcp_server_handle, (uint8_t *)header, 6);
+}
+
+size_t tcp_server_receive_data(tcp_server_handle_t *tcp_server_handle, uint8_t *data, size_t data_size)
+{
+    return recv(tcp_server_handle->client_sock_fd, data, data_size, MSG_DONTWAIT);
 }
