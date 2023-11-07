@@ -3,7 +3,8 @@
 #include "app/voice_to_server.h"
 #include "app/vts_protocol/ws.h"
 #include "app/microphone.h"
-// #include "app/speaker.h"
+#include "app/speaker.h"
+#include "app/tcp_server.h"
 
 #include "sdkconfig.h"
 
@@ -23,18 +24,7 @@
 
 static const char *TAG = "app_main";
 
-typedef enum
-{
-    TCP_SERVER_STATUS_DISCONNECTED,
-    TCP_SERVER_STATUS_CONNECTED,
-} tcp_server_status_t;
-
-typedef struct
-{
-    volatile bool on_playing;
-    tcp_server_status_t tcp_server_status;
-    wifi_helper_status_t *wifi_status;
-} app_state_t;
+wifi_helper_handle_t wifi_helper_handle;
 
 typedef enum
 {
@@ -45,7 +35,7 @@ typedef enum
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_RECEIVE_WAV,
+    HEADER_TYPE_RECEIVE_WAV = 0x00,
     /*
     header[0] = 0x01 header type
     header[1] = increase/decrease volume
@@ -54,17 +44,12 @@ typedef enum
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_ADJUST_VOLUME,
+    HEADER_TYPE_ADJUST_VOLUME = 0x01,
 } header_type_t;
 void log_header_buffer(uint8_t *header)
 {
     ESP_LOGI(TAG, "(%d, %d, %d, %d, %d, %d)", header[0], header[1], header[2], header[3], header[4], header[5]);
 }
-
-app_state_t app_state = {
-    .on_playing = false,
-    .wifi_status = NULL,
-};
 
 // i2s_chan_handle_t speaker_handle;
 voice_to_server_handle_t voice_to_server_handle;
@@ -76,10 +61,7 @@ int32_t *wav_data = NULL;
 size_t bytes_written;
 uint8_t volume = 10;
 
-void setup_pipeline() {
-    audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
-    audio_element_handle_t i2s_stream_writer = i2s_stream_init(&cfg);
-}
+tcp_server_handle_t tcp_server_handle;
 
 void repeat_microphone(void *arg)
 {
@@ -109,17 +91,23 @@ void setup()
         ESP_ERROR_CHECK(esp_event_loop_create_default());
     }
 
-    wifi_helper_connect(app_state.wifi_status);
+    wifi_helper_connect(&wifi_helper_handle);
     microphone_setup();
     // speaker_setup(&speaker_handle, wav_data);
     // voice_to_server_udp_setup((voice_to_server_udp_config_t){
     //     .ip_addr = app_state.wifi_status->ip_addr,
     //     .port = CONFIG_VTS_UDP_SERVER_PORT,
     // });
-    voice_to_server_ws_setup((vts_ws_config_t){
-        .uri = CONFIG_WS_URI,
-        .buffer_size = VTS_WS_BUFFER_SIZE,
-    });
+    voice_to_server_ws_setup(
+        (vts_ws_config_t){
+            .uri = CONFIG_WS_URI,
+            .buffer_size = VTS_WS_BUFFER_SIZE,
+        });
+    tcp_server_handle = tcp_server_setup(
+        (tcp_server_config_t){
+            .port = CONFIG_TINASHA_TCP_SERVER_PORT,
+        },
+        wifi_helper_handle.ip_addr);
 
     // Schedule task
     {
@@ -127,86 +115,93 @@ void setup()
     }
 }
 
-struct sockaddr_in dest_addr = {
-    .sin_addr.s_addr = INADDR_ANY,
-    .sin_family = AF_INET,
-    .sin_port = CONFIG_TINASHA_TCP_SERVER_PORT,
-};
-static uint8_t app_header[6];
-static int tcp_server_id = -1;
-static struct sockaddr_in remote_addr;
-static unsigned int socklen = sizeof(remote_addr);
+size_t available_bytes;
+uint8_t tcp_buff[CONFIG_TCP_BUFFER_SIZE];
+size_t buffer_threshold = 8192;
 
-void loop()
+void _handle_receive_wav_header(uint8_t header)
 {
-    // Start TCP server
-    if (app_state.tcp_server_status == TCP_SERVER_STATUS_DISCONNECTED)
+    static size_t total_sample_read = 0;
+    static size_t bytes_to_read, bytes_read, bytes_to_write, bytes_written;
+    static bool pass_first_buffer_filled = false;
+    static uint16_t sample;
+
+    while (tcp_server_is_client_alive(&tcp_server_handle))
     {
-        tcp_server_id = CREATE_TCP_SERVER();
-        if (tcp_server_id < 0)
-        {
-            ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-            goto handle_tcp_failure;
-        }
-        if (bind(tcp_server_id, (struct sockaddr *)&dest_addr, sizeof(dest_addr)) != 0)
-        {
-            ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-            goto handle_tcp_failure;
-        }
+        available_bytes = tcp_server_ready_to_read(&tcp_server_handle);
 
-        if (listen(tcp_server_id, 2) < 0)
+        if (available_bytes >= 2)
         {
-            ESP_LOGE(TAG, "Error occurred during listen: errno %d", errno);
-            goto handle_tcp_failure;
-        }
+            bytes_to_read = (available_bytes / 2) * 2; // ensure whole samples only
+            if (bytes_to_read > CONFIG_TCP_BUFFER_SIZE)
+            {
+                bytes_to_read = CONFIG_TCP_BUFFER_SIZE;
+            }
 
-        // handle_tcp_success:
-        app_state.tcp_server_status = TCP_SERVER_STATUS_CONNECTED;
-    handle_tcp_failure:
-        close(tcp_server_id);
-        app_state.tcp_server_status = TCP_SERVER_STATUS_DISCONNECTED;
-        return;
-    }
+            bytes_read = tcp_server_receive_data(&tcp_server_handle, tcp_buff, bytes_to_read);
+            for (size_t i = 0; i < bytes_read; i += 2)
+            {
+                sample = tcp_buff[i + 1] << 8 | tcp_buff[i];
+                wav_data[total_sample_read++] = sample;
+            }
 
-    while (1)
-    {
-        int tcp_client_id = accept(tcp_server_id, (struct sockaddr *)&remote_addr, &socklen);
+            if (pass_first_buffer_filled || total_sample_read >= buffer_threshold)
+            {
+                if (!pass_first_buffer_filled)
+                {
+                    ESP_LOGI(TAG, "pass_first_buffer_filled: %d samples", total_sample_read);
+                    pass_first_buffer_filled = true;
+                }
 
-        //----- A CLIENT HAS CONNECTED -----
-        ESP_LOGI(TAG, "New client connection");
-        int received_bytes = recv(tcp_client_id, app_header, 6, MSG_PEEK);
-        if (received_bytes == 0)
-        {
-            ESP_LOGI(TAG, "Failed to read header");
-            vTaskDelay(pdMS_TO_TICKS(5000));
-            return;
-        }
-        else if (received_bytes < 0)
-        {
-            ESP_LOGI(TAG, "Failed to read header: errno %d", errno);
-            vTaskDelay(pdMS_TO_TICKS(5000));
-            return;
+                bytes_to_write = total_sample_read * sizeof(int32_t);
+                bytes_written = 0;
+
+                speaker_write(wav_data, &bytes_written);
+                total_sample_read = 0;
+            }
         }
         else
         {
-            log_header_buffer(app_header);
-            switch (app_header[0])
-            {
-            case HEADER_TYPE_RECEIVE_WAV:
-                app_state.on_playing = true;
-                break;
-            case HEADER_TYPE_ADJUST_VOLUME:
-                break;
-            }
+            vTaskDelay(2);
         }
+    }
+}
+
+void tcp_server_event_handler()
+{
+    tcp_server_find_client(&tcp_server_handle);
+    if (tcp_server_handle.client_sock_fd < 0)
+    {
+        ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
+        return;
+    }
+
+    struct sockaddr_in *addr_in = (struct sockaddr_in *)&tcp_server_handle.remote_addr;
+    ESP_LOGI(
+        TAG,
+        "Accepted connection from %s%d\n",
+        inet_ntoa(addr_in->sin_addr),
+        ntohs(addr_in->sin_port));
+
+    static uint8_t app_header[6];
+    tcp_server_receive_header(&tcp_server_handle, app_header);
+
+    switch (app_header[0])
+    {
+    case HEADER_TYPE_RECEIVE_WAV:
+        _handle_receive_wav_header(app_header);
+        break;
+    case HEADER_TYPE_ADJUST_VOLUME:
+        _handle_adjust_volume_header(app_header);
     }
 }
 
 void app_main()
 {
     setup();
-    // while (1)
-    // {
-    //     loop();
-    // }
+    while (1)
+    {
+        tcp_server_event_handler();
+    }
+    
 }
