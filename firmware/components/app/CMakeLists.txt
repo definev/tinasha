@@ -8,7 +8,8 @@ set(srcs
     "app_voice_to_server/udp.c"
     "app_voice_to_server/ws.c"
     "app_wifi_helper/wifi_helper.c"
-    "app_tinasha_os/tcp_server.c")
+    "app_tinasha_os/tcp_server.c"
+    "app_presence/presence.c")
 
 # Always included headers
 set(includes "app_i2s/include"
@@ -16,7 +17,8 @@ set(includes "app_i2s/include"
              "app_speaker/include"
              "app_voice_to_server/include"
              "app_wifi_helper/include"
-             "app_tinasha_os/include")
+             "app_tinasha_os/include"
+             "app_presence/include")
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}

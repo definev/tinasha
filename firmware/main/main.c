@@ -5,6 +5,7 @@
 #include "app/microphone.h"
 #include "app/speaker.h"
 #include "app/tcp_server.h"
+#include "app/presence.h"
 
 #include "sdkconfig.h"
 
@@ -110,6 +111,12 @@ void setup()
             .port = CONFIG_TINASHA_TCP_SERVER_PORT,
         },
         wifi_helper_handle.ip_addr);
+
+    ESP_LOGI(TAG, "Sending multicast packet to announce presence");
+    presence_activate(&(presence_config_t){
+        .addr = inet_addr("239.0.0.1"),
+        .port = 3001,
+    });
 
     // Schedule task
     {

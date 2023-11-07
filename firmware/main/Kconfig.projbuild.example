@@ -1,5 +1,11 @@
 menu "Example Configuration"
 
+    config APP_NAME
+        string "Application name"
+        default "tinasha"
+        help
+            Application name
+
     config WIFI_SSID 
         string "WiFi SSID"
         default "Ten wifi"
