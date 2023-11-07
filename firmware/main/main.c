@@ -20,7 +20,6 @@
 #include "driver/i2s.h"
 
 #define millis() (esp_timer_get_time() / 1000)
-#define CREATE_TCP_SERVER() socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 
 static const char *TAG = "app_main";
 
@@ -77,6 +76,11 @@ int32_t *wav_data = NULL;
 size_t bytes_written;
 uint8_t volume = 10;
 
+void setup_pipeline() {
+    audio_element_cfg_t cfg = DEFAULT_AUDIO_ELEMENT_CONFIG();
+    audio_element_handle_t i2s_stream_writer = i2s_stream_init(&cfg);
+}
+
 void repeat_microphone(void *arg)
 {
     ESP_LOGI(TAG, "repeat_microphone task started");
@@ -112,8 +116,12 @@ void setup()
     //     .ip_addr = app_state.wifi_status->ip_addr,
     //     .port = CONFIG_VTS_UDP_SERVER_PORT,
     // });
-    voice_to_server_ws_setup();
+    voice_to_server_ws_setup((vts_ws_config_t){
+        .uri = CONFIG_WS_URI,
+        .buffer_size = VTS_WS_BUFFER_SIZE,
+    });
 
+    // Schedule task
     {
         xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
     }
@@ -185,23 +193,7 @@ void loop()
             switch (app_header[0])
             {
             case HEADER_TYPE_RECEIVE_WAV:
-                // int app_timeout = app_header[1] << 8 | app_header[2];
-                // ESP_LOGI(TAG, "Received audio with mic timeout of %d seconds and volume of %d\n", app_timeout, volume);
-                // app_state.on_playing = true;
-
-                // bool initialBufferFilled = false; // get a nice reservoir loaded into wavData to try avoid jitter
-                // uint32_t tic = millis();
-                // size_t totalSamplesRead = 0;
-
-                // size_t bytes_available, bytes_to_read, read_bytes, bytes_written, bytes_to_write;
-                // int16_t sample16;
-
-                // while (1)
-                // {
-                //     uint8_t tcp_buffer[CONFIG_TCP_BUFFER_SIZE];
-                //     read_bytes = recv(tcp_client_id, tcp_buffer, CONFIG_TCP_BUFFER_SIZE, MSG_PEEK);
-                // }
-
+                app_state.on_playing = true;
                 break;
             case HEADER_TYPE_ADJUST_VOLUME:
                 break;

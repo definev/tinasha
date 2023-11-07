@@ -1,10 +1,19 @@
 #ifndef VTS_WS_H
 #define VTS_WS_H
 
+#include "app/i2s.h"
 #include "freertos/FreeRTOS.h"
 
-void voice_to_server_ws_callback(char *data, size_t size);
+#define VTS_WS_BUFFER_SIZE (I2S_BUFFER_SIZE *I2S_SIZE_PER_SAMPLE)
 
-void voice_to_server_ws_setup(void);
+typedef struct
+{
+    char *uri;
+    size_t buffer_size;
+} vts_ws_config_t;
+
+void voice_to_server_ws_setup(vts_ws_config_t config);
+
+void voice_to_server_ws_callback(char *data, size_t size);
 
 #endif
