@@ -4,6 +4,8 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
+#include "lwip/sockets.h"
+
 #define WIFI_HELPER_NETIF_DESC_STA "Tinasha STA"
 /* The examples use WiFi configuration that you can set via project configuration menu
 
@@ -20,9 +22,9 @@
 
 typedef struct
 {
-   uint32_t ip_addr;
-} wifi_helper_status_t;
+   struct sockaddr_storage ip_addr;
+} wifi_helper_handle_t;
 
-esp_err_t wifi_helper_connect(wifi_helper_status_t *status);
+esp_err_t wifi_helper_connect(wifi_helper_handle_t *status);
 
 #endif
