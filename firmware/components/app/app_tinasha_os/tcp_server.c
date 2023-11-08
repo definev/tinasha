@@ -5,13 +5,13 @@
 
 static const char *TAG = "tcp_server";
 
-tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, uint32_t local_addr)
+tcp_server_handle_t tcp_server_setup(uint16_t port)
 {
     tcp_server_handle_t handle = {
         .sock_fd = -1,
         .local_addr = (struct sockaddr_in){
             .sin_family = AF_INET,
-            .sin_port = htons(config.port),       // Port number 80 in network byte order
+            .sin_port = htons(port),       // Port number 80 in network byte order
             .sin_addr.s_addr = htons(INADDR_ANY), // IP address
         }};
 

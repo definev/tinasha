@@ -12,12 +12,7 @@ typedef struct
     struct sockaddr_in remote_addr;
 } tcp_server_handle_t;
 
-typedef struct
-{
-    int port;
-} tcp_server_config_t;
-
-tcp_server_handle_t tcp_server_setup(tcp_server_config_t config, uint32_t local_addr);
+tcp_server_handle_t tcp_server_setup(uint16_t port);
 void tcp_server_listen(tcp_server_handle_t handle);
 void tcp_server_shutdown(tcp_server_handle_t *handle);
 

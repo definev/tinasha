@@ -182,11 +182,15 @@ void setup()
         ESP_ERROR_CHECK(ret);
         ESP_ERROR_CHECK(esp_netif_init());
         ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+        wav_data = speaker_init_buffer();
     }
 
     wifi_helper_connect(&wifi_helper_handle);
+
     microphone_setup();
-    // speaker_setup(&speaker_handle, wav_data);
+    speaker_setup();
+
     // voice_to_server_udp_setup((voice_to_server_udp_config_t){
     //     .ip_addr = app_state.wifi_status->ip_addr,
     //     .target_port = CONFIG_VTS_UDP_SERVER_PORT,
@@ -197,11 +201,7 @@ void setup()
     //         .buffer_size = VTS_WS_BUFFER_SIZE,
     //     });
 
-    tcp_server_handle = tcp_server_setup(
-        (tcp_server_config_t){
-            .port = CONFIG_TINASHA_TCP_SERVER_PORT,
-        },
-        wifi_helper_handle.ip_addr);
+    tcp_server_handle = tcp_server_setup(CONFIG_TINASHA_TCP_SERVER_PORT);
 
     /// Schedule task
     {
