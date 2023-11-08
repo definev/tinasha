@@ -139,6 +139,10 @@ esp_err_t wifi_helper_connect(wifi_helper_handle_t *handle)
     ESP_ERROR_CHECK(esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_handler_event_instance));
     vEventGroupDelete(wifi_event_group);
 
+    const char *hostname = NULL;
+    esp_netif_get_hostname(netif, &hostname);
+    ESP_LOGI(TAG, "Hostname: %s", hostname);
+
     return status;
 }
 

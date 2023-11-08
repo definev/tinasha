@@ -1,12 +1,15 @@
 #ifndef WIFI_HELPER_H
 #define WIFI_HELPER_H
 
+#include "sdkconfig.h"
+
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
 #include "lwip/sockets.h"
 
-#define WIFI_HELPER_NETIF_DESC_STA "tinasha-speaker"
+#define WIFI_HELPER_NETIF_DESC_STA CONFIG_APP_NAME
+
 /* The examples use WiFi configuration that you can set via project configuration menu
 
    If you'd rather not, just change the below entries to strings with
