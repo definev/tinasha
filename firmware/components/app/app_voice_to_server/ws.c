@@ -1,4 +1,4 @@
-#include "app/i2s.h"
+#include "app/i2s_common.h"
 #include "app/vts_protocol/ws.h"
 #include "app/voice_to_server.h"
 

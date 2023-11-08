@@ -13,6 +13,6 @@
 
 void microphone_setup(void);
 
-void microphone_read(void *mic_buffer, size_t buffer_size, size_t *bytes_read);
+void microphone_read(int16_t *data, size_t *bytes_read);
 
 #endif // MICROPHONE_H

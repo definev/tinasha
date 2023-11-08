@@ -1,4 +1,4 @@
-#include "app/i2s.h"
+#include "app/i2s_common.h"
 #include "app/wifi_helper.h"
 #include "app/voice_to_server.h"
 #include "app/vts_protocol/ws.h"
@@ -36,7 +36,7 @@ typedef enum
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_RECEIVE_WAV = 0x00,
+    HEADER_TYPE_RECEIVE_WAV = 0xAA,
     /*
     header[0] = 0x01 header type
     header[1] = increase/decrease volume
@@ -45,7 +45,7 @@ typedef enum
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_ADJUST_VOLUME = 0x01,
+    HEADER_TYPE_ADJUST_VOLUME = 0xAB,
 } header_type_t;
 void log_header_buffer(uint8_t *header)
 {
@@ -60,7 +60,7 @@ size_t bytes_read;
 
 int32_t *wav_data = NULL;
 size_t bytes_written;
-uint8_t volume = 10;
+uint8_t volume = 16;
 
 tcp_server_handle_t tcp_server_handle;
 
@@ -70,62 +70,69 @@ void repeat_microphone(void *arg)
     while (1)
     {
         bytes_read = 0;
-        microphone_read(mic_buff, sizeof(mic_buff), &bytes_read);
+        microphone_read(mic_buff, &bytes_read);
         {
             voice_to_server_ws_callback((char *)mic_buff, bytes_read);
         }
     }
 }
-size_t available_bytes;
+size_t tcp_bytes_read;
 uint8_t tcp_buff[CONFIG_TCP_BUFFER_SIZE];
-size_t buffer_threshold = CONFIG_TCP_BUFFER_SIZE;
+size_t buffer_threshold = 8192;
+bool finish_receiving = false;
 
 void _handle_receive_wav_header(uint8_t *header)
 {
+
     static size_t total_sample_read = 0;
-    static size_t bytes_to_read, bytes_read;
     static bool pass_first_buffer_filled = false;
+    static size_t bytes_to_write;
     static uint16_t sample;
 
-    while (tcp_server_is_client_alive(&tcp_server_handle))
+    finish_receiving = false;
+
+    vTaskDelay(pdMS_TO_TICKS(200));
+
+    while (tcp_server_is_client_alive(&tcp_server_handle) && !finish_receiving)
     {
-        available_bytes = tcp_server_ready_to_read(&tcp_server_handle);
-
-        if (available_bytes >= 2)
+        tcp_bytes_read = tcp_server_receive_data(&tcp_server_handle, tcp_buff, CONFIG_TCP_BUFFER_SIZE);
+        if (tcp_bytes_read == -1)
         {
-            bytes_to_read = (available_bytes / 2) * 2; // ensure whole samples only
-            if (bytes_to_read > CONFIG_TCP_BUFFER_SIZE)
+            ESP_LOGI(TAG, "error reading tcp bytes: %d %s", errno, strerror(errno));
+            if (finish_receiving == false)
             {
-                bytes_to_read = CONFIG_TCP_BUFFER_SIZE;
+                finish_receiving = true;
+                break;
             }
+            continue;
+        }
 
-            bytes_read = tcp_server_receive_data(&tcp_server_handle, tcp_buff, bytes_to_read);
-            for (size_t i = 0; i < bytes_read; i += 2)
+        {
+            for (size_t i = 0; i < tcp_bytes_read; i += 2)
             {
                 sample = tcp_buff[i + 1] << 8 | tcp_buff[i];
-                wav_data[total_sample_read++] = sample;
-            }
-
-            if (pass_first_buffer_filled || total_sample_read >= buffer_threshold)
-            {
-                if (!pass_first_buffer_filled)
-                {
-                    ESP_LOGI(TAG, "pass_first_buffer_filled: %d samples", total_sample_read);
-                    pass_first_buffer_filled = true;
-                }
-
-                // bytes_to_write = total_sample_read * sizeof(int32_t);
-                bytes_written = 0;
-
-                speaker_write((char *)wav_data, &bytes_written);
-                total_sample_read = 0;
+                wav_data[total_sample_read++] = (int32_t)sample << volume;
             }
         }
-        else
+
+        if (pass_first_buffer_filled || total_sample_read >= buffer_threshold)
         {
-            vTaskDelay(2);
+            // ESP_LOGI(TAG, "total_sample_read: %d samples", total_sample_read);
+            if (!pass_first_buffer_filled)
+            {
+                // ESP_LOGI(TAG, "pass_first_buffer_filled: %d samples", total_sample_read);
+                pass_first_buffer_filled = true;
+            }
+
+            bytes_to_write = total_sample_read * sizeof(int32_t);
+            bytes_written = 0;
+            voice_to_server_ws_callback((char *)wav_data, bytes_to_write);
+            // speaker_write((char *)wav_data, bytes_to_write, &bytes_written);
+            // ESP_LOGI(TAG, "speaker_write: %d samples", bytes_written);
+            total_sample_read = 0;
         }
     }
+    ESP_LOGI(TAG, "tcp_server_is_client_alive: %d", tcp_server_is_client_alive(&tcp_server_handle));
 }
 
 void tcp_server_event_handler()
@@ -147,15 +154,17 @@ void tcp_server_event_handler()
     tcp_server_receive_header(&tcp_server_handle, app_header);
     log_header_buffer(app_header);
 
-    // switch (app_header[0])
-    // {
-    // case HEADER_TYPE_RECEIVE_WAV:
-    //     _handle_receive_wav_header(app_header);
-    //     break;
-    // case HEADER_TYPE_ADJUST_VOLUME:
-    //     // _handle_adjust_volume_header(app_header);
-    //     break;
-    // }
+    switch (app_header[0])
+    {
+    case HEADER_TYPE_RECEIVE_WAV:
+        ESP_LOGI(TAG, "Receiving wav");
+        _handle_receive_wav_header(app_header);
+        break;
+    case HEADER_TYPE_ADJUST_VOLUME:
+        ESP_LOGI(TAG, "Adjusting volume");
+        // _handle_adjust_volume_header(app_header);
+        break;
+    }
     tcp_server_diconnect_client(&tcp_server_handle);
 }
 
@@ -188,6 +197,8 @@ void setup()
 
     wifi_helper_connect(&wifi_helper_handle);
 
+    app_i2s_warmup();
+
     microphone_setup();
     speaker_setup();
 
@@ -195,18 +206,18 @@ void setup()
     //     .ip_addr = app_state.wifi_status->ip_addr,
     //     .target_port = CONFIG_VTS_UDP_SERVER_PORT,
     // });
-    // voice_to_server_ws_setup(
-    //     (vts_ws_config_t){
-    //         .uri = CONFIG_WS_URI,
-    //         .buffer_size = VTS_WS_BUFFER_SIZE,
-    //     });
+    voice_to_server_ws_setup(
+        (vts_ws_config_t){
+            .uri = CONFIG_WS_URI,
+            .buffer_size = VTS_WS_BUFFER_SIZE,
+        });
 
     tcp_server_handle = tcp_server_setup(CONFIG_TINASHA_TCP_SERVER_PORT);
 
     /// Schedule task
     {
         //     xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
-        xTaskCreate(&tcp_server_handler, "tcp_server", 4096, NULL, 5, NULL);
+        xTaskCreate(&tcp_server_handler, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL);
     }
 }
 

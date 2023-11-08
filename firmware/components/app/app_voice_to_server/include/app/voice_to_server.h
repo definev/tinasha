@@ -1,7 +1,7 @@
 #ifndef VOICE_TO_SERVER_H
 #define VOICE_TO_SERVER_H
 
-#include "app/i2s.h"
+#include "app/i2s_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"

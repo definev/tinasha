@@ -1,7 +1,7 @@
 #ifndef VTS_WS_H
 #define VTS_WS_H
 
-#include "app/i2s.h"
+#include "app/i2s_common.h"
 #include "freertos/FreeRTOS.h"
 
 #define VTS_WS_BUFFER_SIZE (I2S_BUFFER_SIZE *I2S_SIZE_PER_SAMPLE)

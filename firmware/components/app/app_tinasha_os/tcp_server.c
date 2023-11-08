@@ -11,7 +11,7 @@ tcp_server_handle_t tcp_server_setup(uint16_t port)
         .sock_fd = -1,
         .local_addr = (struct sockaddr_in){
             .sin_family = AF_INET,
-            .sin_port = htons(port),       // Port number 80 in network byte order
+            .sin_port = htons(port),              // Port number 80 in network byte order
             .sin_addr.s_addr = htons(INADDR_ANY), // IP address
         }};
 
@@ -52,13 +52,13 @@ CLEAN_UP:
 
 int tcp_server_ready_to_read(tcp_server_handle_t *handle)
 {
-    if (handle->sock_fd < 0)
+    if (handle->client_sock_fd < 0)
     {
         ESP_LOGE(TAG, "Socket not created");
         return -1;
     }
     static int bytes_available = 0;
-    ioctl(handle->sock_fd, FIONREAD, &bytes_available);
+    ioctl(handle->client_sock_fd, FIONREAD, &bytes_available);
     return bytes_available;
 }
 
@@ -73,40 +73,7 @@ void tcp_server_diconnect_client(tcp_server_handle_t *handle)
 
 bool tcp_server_is_client_alive(tcp_server_handle_t *handle)
 {
-    if (handle->connected)
-    {
-        uint8_t dummy;
-        int res = recv(handle->sock_fd, &dummy, 0, MSG_DONTWAIT);
-        // avoid unused var warning by gcc
-        (void)res;
-        // recv only sets errno if res is <= 0
-        if (res <= 0)
-        {
-            switch (errno)
-            {
-            case EWOULDBLOCK:
-            case ENOENT: // caused by vfs
-                handle->connected = true;
-                break;
-            case ENOTCONN:
-            case EPIPE:
-            case ECONNRESET:
-            case ECONNREFUSED:
-            case ECONNABORTED:
-                handle->connected = false;
-                ESP_LOGI(TAG, "Disconnected: RES: %d, ERR: %d", res, errno);
-                break;
-            default:
-                handle->connected = true;
-                ESP_LOGI(TAG, "Unexpected: RES: %d, ERR: %d", res, errno);
-                break;
-            }
-        }
-        else
-        {
-            handle->connected = true;
-        }
-    }
+    handle->connected = (handle->client_sock_fd >= 0);
     return handle->connected;
 }
 
@@ -129,33 +96,34 @@ void tcp_server_stop(tcp_server_handle_t handle)
 }
 
 int keepAlive = 1;
-int keepIdle = 5;
-int keepInterval = 5;
-int keepCount = 3;
+int keepIdle = 10;
+int keepInterval = 10;
+int keepCount = 5;
 
 int tcp_server_find_client(tcp_server_handle_t *handle)
 {
     socklen_t addr_len = sizeof(handle->remote_addr);
-    int client_sock = accept(
+    handle->client_sock_fd = accept(
         handle->sock_fd,
         (struct sockaddr *)&handle->remote_addr,
         &addr_len);
-    if (client_sock < 0)
+    if (handle->client_sock_fd < 0)
     {
         ESP_LOGE(TAG, "Unable to accept connection: errno %s", strerror(errno));
         return -1;
     }
 
-    handle->client_sock_fd = client_sock;
     // Set tcp keepalive option
-    setsockopt(client_sock, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
-    setsockopt(client_sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
-    setsockopt(client_sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
-    setsockopt(client_sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
+    setsockopt(handle->client_sock_fd, SOL_SOCKET, SO_KEEPALIVE, &keepAlive, sizeof(int));
+    setsockopt(handle->client_sock_fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
+    setsockopt(handle->client_sock_fd, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
+    setsockopt(handle->client_sock_fd, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
 
+    fcntl(handle->client_sock_fd, F_GETFL, O_NONBLOCK);
     // Convert ip address to string
     ESP_LOGI(TAG, "Socket accepted ip address: %s", inet_ntoa(handle->remote_addr.sin_addr));
-    return client_sock;
+
+    return handle->client_sock_fd;
 }
 
 size_t tcp_server_receive_header(tcp_server_handle_t *handle, uint8_t *header)
@@ -165,5 +133,5 @@ size_t tcp_server_receive_header(tcp_server_handle_t *handle, uint8_t *header)
 
 size_t tcp_server_receive_data(tcp_server_handle_t *handle, uint8_t *data, size_t data_size)
 {
-    return recv(handle->client_sock_fd, data, data_size, MSG_DONTWAIT);
+    return recv(handle->client_sock_fd, data, data_size, MSG_WAITALL);
 }

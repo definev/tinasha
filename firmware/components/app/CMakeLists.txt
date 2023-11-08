@@ -2,6 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 # Always compiled source files
 set(srcs
+    "app_i2s/i2s_common.c"
     "app_microphone/microphone.c"
     "app_speaker/speaker.c"
     "app_voice_to_server/voice_to_server.c"

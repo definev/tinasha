@@ -1,6 +1,6 @@
 #include "sdkconfig.h"
 #include "app/microphone.h"
-#include "app/i2s.h"
+#include "app/i2s_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "driver/i2s.h"
@@ -9,11 +9,13 @@
 
 static const char *TAG = "microphone";
 
-void transform_mic_data(int16_t *data, size_t size)
+int32_t mic_buffer[I2S_BUFFER_SIZE];
+
+void transform_mic_data(int16_t *data)
 {
-    for (int i = 0; i < size / sizeof(int16_t); i++)
+    for (int i = 0; i < I2S_BUFFER_SIZE; i++)
     {
-        data[i] = (int16_t)data[i] << 3;
+        data[i] = (int16_t)(mic_buffer[i] >> 14);
     }
 }
 void microphone_setup(void)
@@ -37,9 +39,9 @@ void microphone_setup(void)
         .data_in_num = I2S_MICROPHONE_SERIAL_DATA,
     };
 
-    i2s_driver_install(I2S_MICROPHONE_PORT, &i2s_config, 0, NULL);
-    i2s_set_pin(I2S_MICROPHONE_PORT, &pin_config);
-    i2s_start(I2S_MICROPHONE_PORT);
+    i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+    i2s_set_pin(I2S_PORT, &pin_config);
+    i2s_start(I2S_PORT);
 
     ESP_LOGI(TAG, "Start new microphone:\n");
     ESP_LOGI(TAG, "- Sample rate: %d", I2S_SAMPLE_RATE);
@@ -49,9 +51,8 @@ void microphone_setup(void)
     ESP_LOGI(TAG, "microphone initialized");
 }
 
-void microphone_read(void *mic_buffer, size_t buffer_size, size_t *bytes_read)
+void microphone_read(int16_t *data, size_t *bytes_read)
 {
-    transform_mic_data(mic_buffer, buffer_size);
-    // ESP_ERROR_CHECK(i2s_channel_read(handler, mic_buffer, buffer_size, bytes_read, portMAX_DELAY));
-    i2s_read(I2S_MICROPHONE_PORT, mic_buffer, buffer_size, bytes_read, portMAX_DELAY);
+    i2s_read(I2S_PORT, mic_buffer, I2S_BUFFER_SIZE, bytes_read, portMAX_DELAY);
+    transform_mic_data(data);
 }
