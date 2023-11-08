@@ -5,7 +5,6 @@
 #include "app/microphone.h"
 #include "app/speaker.h"
 #include "app/tcp_server.h"
-#include "app/presence.h"
 
 #include "sdkconfig.h"
 
@@ -77,61 +76,14 @@ void repeat_microphone(void *arg)
         }
     }
 }
-
-void setup()
-{
-    // boilerplate
-    {
-        esp_err_t ret = nvs_flash_init();
-        if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-        {
-            ESP_ERROR_CHECK(nvs_flash_erase());
-            ret = nvs_flash_init();
-        }
-        ESP_ERROR_CHECK(ret);
-        ESP_ERROR_CHECK(esp_netif_init());
-        ESP_ERROR_CHECK(esp_event_loop_create_default());
-    }
-
-    wifi_helper_connect(&wifi_helper_handle);
-    microphone_setup();
-    // speaker_setup(&speaker_handle, wav_data);
-    // voice_to_server_udp_setup((voice_to_server_udp_config_t){
-    //     .ip_addr = app_state.wifi_status->ip_addr,
-    //     .port = CONFIG_VTS_UDP_SERVER_PORT,
-    // });
-    voice_to_server_ws_setup(
-        (vts_ws_config_t){
-            .uri = CONFIG_WS_URI,
-            .buffer_size = VTS_WS_BUFFER_SIZE,
-        });
-
-    tcp_server_handle = tcp_server_setup(
-        (tcp_server_config_t){
-            .port = CONFIG_TINASHA_TCP_SERVER_PORT,
-        },
-        wifi_helper_handle.ip_addr);
-
-    ESP_LOGI(TAG, "Sending multicast packet to announce presence");
-    presence_activate(&(presence_config_t){
-        .addr = inet_addr("239.0.0.1"),
-        .port = 3001,
-    });
-
-    // Schedule task
-    {
-        xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
-    }
-}
-
 size_t available_bytes;
 uint8_t tcp_buff[CONFIG_TCP_BUFFER_SIZE];
-size_t buffer_threshold = 8192;
+size_t buffer_threshold = CONFIG_TCP_BUFFER_SIZE;
 
 void _handle_receive_wav_header(uint8_t *header)
 {
     static size_t total_sample_read = 0;
-    static size_t bytes_to_read, bytes_read, bytes_to_write, bytes_written;
+    static size_t bytes_to_read, bytes_read;
     static bool pass_first_buffer_filled = false;
     static uint16_t sample;
 
@@ -162,10 +114,10 @@ void _handle_receive_wav_header(uint8_t *header)
                     pass_first_buffer_filled = true;
                 }
 
-                bytes_to_write = total_sample_read * sizeof(int32_t);
+                // bytes_to_write = total_sample_read * sizeof(int32_t);
                 bytes_written = 0;
 
-                speaker_write(wav_data, &bytes_written);
+                speaker_write((char *)wav_data, &bytes_written);
                 total_sample_read = 0;
             }
         }
@@ -178,10 +130,9 @@ void _handle_receive_wav_header(uint8_t *header)
 
 void tcp_server_event_handler()
 {
-    tcp_server_find_client(&tcp_server_handle);
-    if (tcp_server_handle.client_sock_fd < 0)
+    int client_sock = tcp_server_find_client(&tcp_server_handle);
+    if (client_sock < 0)
     {
-        ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
         return;
     }
 
@@ -194,23 +145,72 @@ void tcp_server_event_handler()
 
     static uint8_t app_header[6];
     tcp_server_receive_header(&tcp_server_handle, app_header);
+    log_header_buffer(app_header);
 
-    switch (app_header[0])
+    // switch (app_header[0])
+    // {
+    // case HEADER_TYPE_RECEIVE_WAV:
+    //     _handle_receive_wav_header(app_header);
+    //     break;
+    // case HEADER_TYPE_ADJUST_VOLUME:
+    //     // _handle_adjust_volume_header(app_header);
+    //     break;
+    // }
+    tcp_server_diconnect_client(&tcp_server_handle);
+}
+
+void tcp_server_handler(void *arg)
+{
+    ESP_LOGI(TAG, "tcp_server_handler task started");
+    while (1)
     {
-    case HEADER_TYPE_RECEIVE_WAV:
-        _handle_receive_wav_header(app_header);
-        break;
-    case HEADER_TYPE_ADJUST_VOLUME:
-        // _handle_adjust_volume_header(app_header);
-        break;
+        tcp_server_event_handler();
+    }
+    tcp_server_shutdown(&tcp_server_handle);
+}
+
+void setup()
+{
+    // boilerplate
+    {
+        esp_err_t ret = nvs_flash_init();
+        if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+        {
+            ESP_ERROR_CHECK(nvs_flash_erase());
+            ret = nvs_flash_init();
+        }
+        ESP_ERROR_CHECK(ret);
+        ESP_ERROR_CHECK(esp_netif_init());
+        ESP_ERROR_CHECK(esp_event_loop_create_default());
+    }
+
+    wifi_helper_connect(&wifi_helper_handle);
+    microphone_setup();
+    // speaker_setup(&speaker_handle, wav_data);
+    // voice_to_server_udp_setup((voice_to_server_udp_config_t){
+    //     .ip_addr = app_state.wifi_status->ip_addr,
+    //     .target_port = CONFIG_VTS_UDP_SERVER_PORT,
+    // });
+    // voice_to_server_ws_setup(
+    //     (vts_ws_config_t){
+    //         .uri = CONFIG_WS_URI,
+    //         .buffer_size = VTS_WS_BUFFER_SIZE,
+    //     });
+
+    tcp_server_handle = tcp_server_setup(
+        (tcp_server_config_t){
+            .port = CONFIG_TINASHA_TCP_SERVER_PORT,
+        },
+        wifi_helper_handle.ip_addr);
+
+    /// Schedule task
+    {
+        //     xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
+        xTaskCreate(&tcp_server_handler, "tcp_server", 4096, NULL, 5, NULL);
     }
 }
 
 void app_main()
 {
     setup();
-    while (1)
-    {
-        tcp_server_event_handler();
-    }
 }
