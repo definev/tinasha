@@ -13,7 +13,7 @@
 // #include "esp_heap_caps.h"
 
 // how many samples to load from TCP before starting playing (avoid jitter due to running out of data w/ bad wifi)
-#ifdef CONFIG_SPIRAM_SIZE
+#ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
 int bufferThreshold = 8192;
 #else
 int bufferThreshold = 512;
@@ -52,13 +52,13 @@ void speaker_setup(void)
 {
     ESP_LOGI(TAG, "Start speaker:");
     ESP_LOGI(TAG, "- Sample rate: %d", I2S_SAMPLE_RATE);
-    ESP_LOGI(TAG, "- Serial clock: %d", I2S_SERIAL_CLOCK);
+    ESP_LOGI(TAG, "- Serial clock: %d", I2S_BCK_PIN);
     ESP_LOGI(TAG, "- Word select: %d", I2S_WORD_SELECT);
     ESP_LOGI(TAG, "- Data line: %d", I2S_SPEAKER_SERIAL_DATA);
     ESP_LOGI(TAG, "Speaker initialized");
 }
 
-void speaker_write(char *data, size_t size, size_t *bytes_written)
+void speaker_write(const void *data, size_t size, size_t *bytes_written)
 {
     ESP_ERROR_CHECK(i2s_write(I2S_PORT, data, size, bytes_written, portMAX_DELAY));
 }
