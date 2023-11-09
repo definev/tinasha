@@ -4,12 +4,11 @@
 #include "driver/gpio.h"
 #include "driver/i2s.h"
 
-#define I2S_MICROPHONE_SERIAL_DATA GPIO_NUM_40 // SD
-#define I2S_SPEAKER_SERIAL_DATA GPIO_NUM_38    // SD
-#define I2S_WORD_SELECT GPIO_NUM_41
-#define I2S_SERIAL_CLOCK GPIO_NUM_42
+#define I2S_SD_IN GPIO_NUM_40  // SD
+#define I2S_SD_OUT GPIO_NUM_40 // SD
+#define I2S_BCK_PIN GPIO_NUM_41
+#define I2S_WS_PIN GPIO_NUM_42
 
-#define I2S_MICROPHONE_PORT I2S_NUM_0
 #define I2S_PORT I2S_NUM_0
 
 #define I2S_DMA_DESC_NUM 6    // Same with I2S DMA buffer count
