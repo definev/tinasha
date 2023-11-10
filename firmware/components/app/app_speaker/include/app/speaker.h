@@ -8,6 +8,6 @@ int32_t *speaker_init_buffer();
 
 void speaker_setup(void);
 
-void speaker_write(const void *data, size_t size, size_t *bytes_written);
+void speaker_write(const char *data, size_t size, size_t *bytes_written);
 
 #endif // SPEAKER_H

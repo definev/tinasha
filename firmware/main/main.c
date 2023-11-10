@@ -126,8 +126,8 @@ void _handle_receive_wav_header(uint8_t *header)
 
             bytes_to_write = total_sample_read * sizeof(int32_t);
             bytes_written = 0;
-            voice_to_server_ws_callback((char *)wav_data, bytes_to_write);
-            // speaker_write((char *)wav_data, bytes_to_write, &bytes_written);
+            // voice_to_server_ws_callback((char *)wav_data, bytes_to_write);
+            speaker_write((char *)wav_data, bytes_to_write, &bytes_written);
             // ESP_LOGI(TAG, "speaker_write: %d samples", bytes_written);
             total_sample_read = 0;
         }
@@ -206,11 +206,11 @@ void setup()
     //     .ip_addr = app_state.wifi_status->ip_addr,
     //     .target_port = CONFIG_VTS_UDP_SERVER_PORT,
     // });
-    voice_to_server_ws_setup(
-        (vts_ws_config_t){
-            .uri = CONFIG_WS_URI,
-            .buffer_size = VTS_WS_BUFFER_SIZE,
-        });
+    // voice_to_server_ws_setup(
+    //     (vts_ws_config_t){
+    //         .uri = CONFIG_WS_URI,
+    //         .buffer_size = VTS_WS_BUFFER_SIZE,
+    //     });
 
     tcp_server_handle = tcp_server_setup(CONFIG_TINASHA_TCP_SERVER_PORT);
 
