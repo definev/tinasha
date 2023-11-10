@@ -25,6 +25,7 @@
 
 typedef struct
 {
+   bool connected;
    uint32_t ip_addr;
 } wifi_helper_handle_t;
 

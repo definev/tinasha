@@ -44,11 +44,14 @@ volatile uint8_t volume = 14; // crude speaker volume control by bitshifting rec
 
 tcp_server_handle_t tcp_server_handle;
 
-void repeat_microphone(void *arg)
+void repeat_microphone_task(void *arg)
 {
-    ESP_LOGI(TAG, "repeat_microphone task started");
+    ESP_LOGI(TAG, "repeat_microphone_task task started");
     while (1)
     {
+        if (audio_playing)
+            continue;
+        if (wifi_helper_handle.ip_addr)
         bytes_read = 0;
         microphone_read(mic_buff, &bytes_read);
         {
@@ -165,9 +168,9 @@ void tcp_server_event_handler()
     tcp_server_diconnect_client(&tcp_server_handle);
 }
 
-void tcp_server_handler(void *arg)
+void tcp_server_task(void *arg)
 {
-    ESP_LOGI(TAG, "tcp_server_handler task started");
+    ESP_LOGI(TAG, "tcp_server_task task started");
     while (1)
     {
         tcp_server_event_handler();
@@ -213,8 +216,8 @@ void setup()
 
     /// Schedule task
     {
-        //     xTaskCreatePinnedToCore(&repeat_microphone, "repeat_microphone", 4096, NULL, 1, NULL, 0);
-        xTaskCreate(&tcp_server_handler, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL);
+        xTaskCreate(&repeat_microphone_task, "repeat_microphone", 4096, NULL, 1, NULL);
+        xTaskCreate(&tcp_server_task, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL);
     }
 }
 

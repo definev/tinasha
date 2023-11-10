@@ -25,22 +25,45 @@ static int s_retry_num = 0;
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
+    wifi_helper_handle_t *handle = (wifi_helper_handle_t *)arg;
+
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
         ESP_LOGI(TAG, "Connecting to AP...");
-        esp_wifi_connect();
+        esp_err_t err = esp_wifi_connect();
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to connect to AP: %s", esp_err_to_name(err));
+            handle->connected = false;
+        }
+        else
+        {
+            ESP_LOGI(TAG, "Connected to AP");
+            handle->connected = true;
+        }
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
         if (s_retry_num < WIFI_MAXIMUM_RETRY)
         {
             ESP_LOGI(TAG, "Reconnecting to AP...");
-            esp_wifi_connect();
-            s_retry_num++;
+            esp_err_t err = esp_wifi_connect();
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Failed to reconnect to AP: %s", esp_err_to_name(err));
+                handle->connected = false;
+                s_retry_num++;
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Reconnected to AP");
+                handle->connected = true;
+            }
         }
         else
         {
             xEventGroupSetBits(wifi_event_group, WIFI_FAIL_BIT);
+            handle->connected = false;
         }
     }
 }
@@ -80,14 +103,14 @@ esp_err_t wifi_helper_connect(wifi_helper_handle_t *handle)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
                                                         &wifi_event_handler,
-                                                        NULL,
+                                                        (void *)handle,
                                                         &wifi_handler_event_instance));
 
     esp_event_handler_instance_t got_ip_event_instance;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                                                         IP_EVENT_STA_GOT_IP,
                                                         &ip_event_handler,
-                                                        (void *)wifi_event_group,
+                                                        (void *)handle,
                                                         &got_ip_event_instance));
 
     /** START THE WIFI DRIVER **/
