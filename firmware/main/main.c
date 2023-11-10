@@ -209,7 +209,7 @@ void setup()
     //         .buffer_size = VTS_WS_BUFFER_SIZE,
     //     });
 
-    tcp_server_handle = tcp_server_setup(CONFIG_TINASHA_TCP_SERVER_PORT);
+    tcp_server_setup(&tcp_server_handle, CONFIG_TINASHA_TCP_SERVER_PORT);
 
     /// Schedule task
     {

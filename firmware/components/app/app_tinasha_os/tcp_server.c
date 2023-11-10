@@ -5,46 +5,45 @@
 
 static const char *TAG = "tcp_server";
 
-tcp_server_handle_t tcp_server_setup(uint16_t port)
+void tcp_server_setup(tcp_server_handle_t *handle, uint16_t port)
 {
-    tcp_server_handle_t handle = {
-        .sock_fd = -1,
-        .local_addr = (struct sockaddr_in){
-            .sin_family = AF_INET,
-            .sin_port = htons(port),              // Port number 80 in network byte order
-            .sin_addr.s_addr = htons(INADDR_ANY), // IP address
-        }};
+    handle->sock_fd = -1,
+    handle->local_addr = (struct sockaddr_in){
+        .sin_family = AF_INET,
+        .sin_port = htons(port),              // Port number 80 in network byte order
+        .sin_addr.s_addr = htons(INADDR_ANY), // IP address
+    };
 
-    handle.sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (handle.sock_fd < 0)
+    handle->sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+    if (handle->sock_fd < 0)
     {
         ESP_LOGE(TAG, "Unable to create socket: errno %s", strerror(errno));
         goto CLEAN_UP;
     }
 
     int opt = 1;
-    setsockopt(handle.sock_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(handle->sock_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    if (bind(handle.sock_fd, (struct sockaddr *)&handle.local_addr, sizeof(handle.local_addr)) != 0)
+    if (bind(handle->sock_fd, (struct sockaddr *)&handle->local_addr, sizeof(handle->local_addr)) != 0)
     {
         ESP_LOGE(TAG, "Socket unable to bind: errno %s", strerror(errno));
         goto CLEAN_UP;
     }
-    if (listen(handle.sock_fd, 1) < 0)
+    if (listen(handle->sock_fd, 1) < 0)
     {
         ESP_LOGE(TAG, "Error occurred during listen: errno %d, %s", errno, strerror(errno));
         goto CLEAN_UP;
     }
 
-    ESP_LOGI(TAG, "Socket %d created, local_addr: %s", handle.sock_fd, inet_ntoa(handle.local_addr.sin_addr));
+    ESP_LOGI(TAG, "Socket %d created, local_addr: %s", handle->sock_fd, inet_ntoa(handle->local_addr.sin_addr));
 
     return handle;
 
 CLEAN_UP:
 {
-    if (handle.sock_fd >= 0)
+    if (handle->sock_fd >= 0)
     {
-        close(handle.sock_fd);
+        close(handle->sock_fd);
     }
     return handle;
 }
