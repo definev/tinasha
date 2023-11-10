@@ -9,7 +9,8 @@ set(srcs
     "app_voice_to_server/udp.c"
     "app_voice_to_server/ws.c"
     "app_wifi_helper/wifi_helper.c"
-    "app_tinasha_os/tcp_server.c")
+    "app_tinasha_os/tcp_server.c"
+    "app_tinasha_os/app_header.c")
 
 # Always included headers
 set(includes "app_i2s/include"

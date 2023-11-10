@@ -21,9 +21,9 @@ int bufferThreshold = 512;
 
 static const char *TAG = "speaker";
 
-int32_t *speaker_init_buffer()
+wav_size_t *speaker_init_buffer()
 {
-    int32_t *wav_data;
+    wav_size_t *wav_data;
     /* Initialize WAV form */
     size_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
     size_t total_psram = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
@@ -32,7 +32,7 @@ int32_t *speaker_init_buffer()
     ESP_LOGI(TAG, "PSRAM total: %d", total_psram);
     ESP_LOGI(TAG, "PSRAM used: %d", total_psram - free_psram);
 
-    wav_data = (int32_t *)malloc((2 * 1024 * 1024) / sizeof(int32_t));
+    wav_data = (wav_size_t *)malloc((2 * 1024 * 1024) / sizeof(wav_size_t));
     if (wav_data == NULL)
     {
         ESP_LOGE(TAG, "Memory allocation failed!");
@@ -46,6 +46,23 @@ int32_t *speaker_init_buffer()
     free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
     ESP_LOGI(TAG, "PSRAM used: %d", total_psram - free_psram);
     return wav_data;
+}
+
+static uint16_t sample;
+void speaker_append_tcp_to_wav(
+    uint8_t *tcp_data,
+    size_t tcp_data_size,
+    wav_size_t *wav_data,
+    size_t *wav_data_size,
+    uint8_t volume)
+{
+
+    for (size_t i = 0; i < tcp_data_size; i += 2)
+    {
+        sample = tcp_data[i + 1] << 8 | tcp_data[i];
+        wav_data[*wav_data_size] = (wav_size_t)sample << volume;
+        (*wav_data_size)++;
+    }
 }
 
 void speaker_setup(void)

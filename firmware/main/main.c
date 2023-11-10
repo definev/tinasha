@@ -4,7 +4,9 @@
 #include "app/vts_protocol/ws.h"
 #include "app/microphone.h"
 #include "app/speaker.h"
-#include "app/tcp_server.h"
+
+#include "os/tcp_server.h"
+#include "os/command/app_header.h"
 
 #include "sdkconfig.h"
 
@@ -27,40 +29,18 @@ static const char *TAG = "app_main";
 
 wifi_helper_handle_t wifi_helper_handle;
 
-typedef enum
-{
-    /*
-    header[0] = 0x00 header type
-    header[1:2] = mic timeout after playing (ms)
-    header[3] = value
-    header[4] = none
-    header[5] = none
-    */
-    HEADER_TYPE_RECEIVE_WAV = 0xAA,
-    /*
-    header[0] = 0x01 header type
-    header[1] = increase/decrease volume
-    header[2] = value
-    header[3] = none
-    header[4] = none
-    header[5] = none
-    */
-    HEADER_TYPE_ADJUST_VOLUME = 0xAB,
-} header_type_t;
-void log_header_buffer(uint8_t *header)
-{
-    ESP_LOGI(TAG, "(%d, %d, %d, %d, %d, %d)", header[0], header[1], header[2], header[3], header[4], header[5]);
-}
-
 // i2s_chan_handle_t speaker_handle;
 voice_to_server_handle_t voice_to_server_handle;
+
+volatile bool audio_playing = false;
+uint32_t microphone_timeout = 0;
 
 int16_t mic_buff[I2S_BUFFER_SIZE];
 size_t bytes_read;
 
-int32_t *wav_data = NULL;
+wav_size_t *wav_data = NULL;
 size_t bytes_written;
-uint8_t volume = 16;
+volatile uint8_t volume = 14; // crude speaker volume control by bitshifting received audio, also set in header. Works well for loudness perception
 
 tcp_server_handle_t tcp_server_handle;
 
@@ -76,18 +56,23 @@ void repeat_microphone(void *arg)
         }
     }
 }
+
 size_t tcp_bytes_read;
 uint8_t tcp_buff[CONFIG_TCP_BUFFER_SIZE];
 size_t buffer_threshold = 8192;
 bool finish_receiving = false;
 
+static int64_t _tic = 0;
+static uint16_t _timeout = 0;
 void _handle_receive_wav_header(uint8_t *header)
 {
+    command_header_parse_volume(header, &volume);
+    command_header_parse_timeout(header, &_timeout);
 
+    _tic = millis();
     static size_t total_sample_read = 0;
     static bool pass_first_buffer_filled = false;
     static size_t bytes_to_write;
-    static uint16_t sample;
 
     finish_receiving = false;
 
@@ -107,32 +92,44 @@ void _handle_receive_wav_header(uint8_t *header)
             continue;
         }
 
-        {
-            for (size_t i = 0; i < tcp_bytes_read; i += 2)
-            {
-                sample = tcp_buff[i + 1] << 8 | tcp_buff[i];
-                wav_data[total_sample_read++] = (int32_t)sample << volume;
-            }
-        }
+        speaker_append_tcp_to_wav(tcp_buff, tcp_bytes_read, wav_data, &total_sample_read, volume);
 
         if (pass_first_buffer_filled || total_sample_read >= buffer_threshold)
         {
-            // ESP_LOGI(TAG, "total_sample_read: %d samples", total_sample_read);
             if (!pass_first_buffer_filled)
             {
-                // ESP_LOGI(TAG, "pass_first_buffer_filled: %d samples", total_sample_read);
                 pass_first_buffer_filled = true;
             }
 
-            bytes_to_write = total_sample_read * sizeof(int32_t);
+            bytes_to_write = total_sample_read * sizeof(wav_size_t);
             bytes_written = 0;
             // voice_to_server_ws_callback((char *)wav_data, bytes_to_write);
             speaker_write((char *)wav_data, bytes_to_write, &bytes_written);
-            // ESP_LOGI(TAG, "speaker_write: %d samples", bytes_written);
             total_sample_read = 0;
         }
     }
+
+    uint32_t silence_buffer[240];
+    memset(silence_buffer, 0, sizeof(silence_buffer));
+    for (int i = 0; i < 8; i++)
+    {
+        size_t bytes_written = 0;
+        speaker_write((const char *)silence_buffer, sizeof(silence_buffer), &bytes_written);
+    }
+
+    audio_playing = false;
+
+    microphone_timeout = millis() + _timeout * 1000;
+
     ESP_LOGI(TAG, "tcp_server_is_client_alive: %d", tcp_server_is_client_alive(&tcp_server_handle));
+    ESP_LOGI(TAG, "Done loading audio in buffers in %lld ms", millis() - _tic);
+    ESP_LOGI(TAG, "Set microphone_timeout to %u", microphone_timeout);
+}
+
+void _handle_adjust_volume_header(uint8_t *header)
+{
+    command_header_parse_volume(header, &volume);
+    ESP_LOGI(TAG, "Set volume to %d", volume);
 }
 
 void tcp_server_event_handler()
@@ -152,9 +149,9 @@ void tcp_server_event_handler()
 
     static uint8_t app_header[6];
     tcp_server_receive_header(&tcp_server_handle, app_header);
-    log_header_buffer(app_header);
+    command_header_log(app_header);
 
-    switch (app_header[0])
+    switch (command_header_get_type(app_header))
     {
     case HEADER_TYPE_RECEIVE_WAV:
         ESP_LOGI(TAG, "Receiving wav");
@@ -162,7 +159,7 @@ void tcp_server_event_handler()
         break;
     case HEADER_TYPE_ADJUST_VOLUME:
         ESP_LOGI(TAG, "Adjusting volume");
-        // _handle_adjust_volume_header(app_header);
+        _handle_adjust_volume_header(app_header);
         break;
     }
     tcp_server_diconnect_client(&tcp_server_handle);
