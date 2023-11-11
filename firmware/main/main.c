@@ -1,7 +1,7 @@
 #include "app/i2s_common.h"
 #include "app/wifi_helper.h"
 #include "app/voice_to_server.h"
-#include "app/vts_protocol/ws.h"
+#include "app/vts_protocol/udp.h"
 #include "app/microphone.h"
 #include "app/speaker.h"
 
@@ -62,8 +62,8 @@ void repeat_microphone_task(void *arg)
         // }
 
         microphone_read(microphone_handle.buffer, &microphone_handle.bytes_read);
-        // voice_to_server_udp_callback((const char *)microphone_handle.buffer, sizeof(microphone_handle.buffer));
-        voice_to_server_ws_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
+        voice_to_server_udp_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
+        // voice_to_server_ws_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
     }
 }
 
@@ -211,15 +211,15 @@ void setup()
     microphone_setup(&microphone_handle);
     speaker_setup();
 
-    // voice_to_server_udp_setup((voice_to_server_udp_config_t){
-    //     .ip_addr = CONFIG_VTS_UDP_SERVER_IP,
-    //     .port = CONFIG_VTS_UDP_SERVER_PORT,
-    // });
-    voice_to_server_ws_setup(
-        (vts_ws_config_t){
-            .uri = CONFIG_WS_URI,
-            .buffer_size = VTS_WS_BUFFER_SIZE,
-        });
+    voice_to_server_udp_setup((voice_to_server_udp_config_t){
+        .ip_addr = CONFIG_VTS_UDP_SERVER_IP,
+        .port = CONFIG_VTS_UDP_SERVER_PORT,
+    });
+    // voice_to_server_ws_setup(
+    //     (vts_ws_config_t){
+    //         .uri = CONFIG_WS_URI,
+    //         .buffer_size = VTS_WS_BUFFER_SIZE,
+    //     });
 
     tcp_server_setup(&tcp_server_handle, CONFIG_TINASHA_TCP_SERVER_PORT);
 
