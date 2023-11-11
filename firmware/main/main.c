@@ -23,20 +23,17 @@
 #include "sys/socket.h"
 #include "driver/i2s.h"
 
+
 #define millis() (esp_timer_get_time() / 1000)
 
 static const char *TAG = "app_main";
 
-wifi_helper_handle_t wifi_helper_handle;
+static wifi_helper_handle_t wifi_helper_handle;
 
-// i2s_chan_handle_t speaker_handle;
-voice_to_server_handle_t voice_to_server_handle;
+static voice_to_server_handle_t voice_to_server_handle;
+static microphone_handle_t microphone_handle;
 
 volatile bool audio_playing = false;
-uint32_t microphone_timeout = 0;
-
-int16_t mic_buff[I2S_BUFFER_SIZE];
-size_t bytes_read;
 
 wav_size_t *wav_data = NULL;
 size_t bytes_written;
@@ -51,12 +48,20 @@ void repeat_microphone_task(void *arg)
     {
         if (audio_playing)
             continue;
-        if (wifi_helper_handle.ip_addr)
-        bytes_read = 0;
-        microphone_read(mic_buff, &bytes_read);
+        if (wifi_helper_handle.connected == false)
         {
-            voice_to_server_ws_callback((char *)mic_buff, bytes_read);
+            bytes_read = 0;
+            continue;
         }
+        if (microphone_timeout > millis())
+        {
+            bytes_read = 0;
+            continue;
+        }
+
+        microphone_read(mic_buff, &bytes_read);
+
+        // voice_to_server_ws_callback((char *)mic_buff, bytes_read);
     }
 }
 
@@ -199,7 +204,7 @@ void setup()
 
     app_i2s_warmup();
 
-    microphone_setup();
+    microphone_setup(&microphone_handle);
     speaker_setup();
 
     // voice_to_server_udp_setup((voice_to_server_udp_config_t){
