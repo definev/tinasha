@@ -23,7 +23,6 @@
 #include "sys/socket.h"
 #include "driver/i2s.h"
 
-
 #define millis() (esp_timer_get_time() / 1000)
 
 static const char *TAG = "app_main";
@@ -31,7 +30,7 @@ static const char *TAG = "app_main";
 static wifi_helper_handle_t wifi_helper_handle;
 
 static voice_to_server_handle_t voice_to_server_handle;
-static microphone_handle_t microphone_handle;
+static microphone_handle_t microphone_handle = {};
 
 volatile bool audio_playing = false;
 
@@ -46,22 +45,25 @@ void repeat_microphone_task(void *arg)
     ESP_LOGI(TAG, "repeat_microphone_task task started");
     while (1)
     {
-        if (audio_playing)
+         if (audio_playing == true)
+        {
+            ESP_LOGI(TAG, "audio playing, skipping microphone");
             continue;
+        }
         if (wifi_helper_handle.connected == false)
         {
-            bytes_read = 0;
+            microphone_handle.bytes_read = 0;
             continue;
         }
-        if (microphone_timeout > millis())
-        {
-            bytes_read = 0;
-            continue;
-        }
+        // if (microphone_handle.timeout > millis())
+        // {
+        //     microphone_handle.bytes_read = 0;
+        //     continue;
+        // }
 
-        microphone_read(mic_buff, &bytes_read);
-
-        // voice_to_server_ws_callback((char *)mic_buff, bytes_read);
+        microphone_read(microphone_handle.buffer, &microphone_handle.bytes_read);
+        // voice_to_server_udp_callback((const char *)microphone_handle.buffer, sizeof(microphone_handle.buffer));
+        voice_to_server_ws_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
     }
 }
 
@@ -74,6 +76,8 @@ static int64_t _tic = 0;
 static uint16_t _timeout = 0;
 void _handle_receive_wav_header(uint8_t *header)
 {
+    audio_playing = true;
+
     command_header_parse_volume(header, &volume);
     command_header_parse_timeout(header, &_timeout);
 
@@ -127,11 +131,11 @@ void _handle_receive_wav_header(uint8_t *header)
 
     audio_playing = false;
 
-    microphone_timeout = millis() + _timeout * 1000;
+    microphone_handle.timeout = millis() + _timeout * 1000;
 
     ESP_LOGI(TAG, "tcp_server_is_client_alive: %d", tcp_server_is_client_alive(&tcp_server_handle));
     ESP_LOGI(TAG, "Done loading audio in buffers in %lld ms", millis() - _tic);
-    ESP_LOGI(TAG, "Set microphone_timeout to %u", microphone_timeout);
+    ESP_LOGI(TAG, "Set microphone_timeout to %lld", microphone_handle.timeout);
 }
 
 void _handle_adjust_volume_header(uint8_t *header)
@@ -208,14 +212,14 @@ void setup()
     speaker_setup();
 
     // voice_to_server_udp_setup((voice_to_server_udp_config_t){
-    //     .ip_addr = app_state.wifi_status->ip_addr,
-    //     .target_port = CONFIG_VTS_UDP_SERVER_PORT,
+    //     .ip_addr = CONFIG_VTS_UDP_SERVER_IP,
+    //     .port = CONFIG_VTS_UDP_SERVER_PORT,
     // });
-    // voice_to_server_ws_setup(
-    //     (vts_ws_config_t){
-    //         .uri = CONFIG_WS_URI,
-    //         .buffer_size = VTS_WS_BUFFER_SIZE,
-    //     });
+    voice_to_server_ws_setup(
+        (vts_ws_config_t){
+            .uri = CONFIG_WS_URI,
+            .buffer_size = VTS_WS_BUFFER_SIZE,
+        });
 
     tcp_server_setup(&tcp_server_handle, CONFIG_TINASHA_TCP_SERVER_PORT);
 

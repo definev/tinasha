@@ -22,7 +22,7 @@ void voice_to_server_ws_setup(vts_ws_config_t config)
     esp_websocket_client_start(client);
 }
 
-void voice_to_server_ws_callback(char *data, size_t size)
+void voice_to_server_ws_callback(const char *data, size_t size)
 {
     if (client == NULL)
     {

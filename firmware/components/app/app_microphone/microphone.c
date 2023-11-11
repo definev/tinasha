@@ -11,7 +11,7 @@
 #define millis() (esp_timer_get_time() / 1000)
 #define MAX_ALLOWED_OFFSET 16000
 #define MIC_OFFSET_AVERAGING_FRAMES 1
-#define VAD_MIC_EXTEND 10000 // ensure there's always another 5s after last VAD detected by server to avoid cutting off while talking
+#define VAD_MIC_EXTEND 20000 // ensure there's always another 5s after last VAD detected by server to avoid cutting off while talking
 
 static const char *TAG = "microphone";
 
@@ -27,7 +27,7 @@ void transform_mic_data(int16_t *data)
 
 void microphone_setup(microphone_handle_t *handle)
 {
-    ESP_LOGI(TAG, "Start new microphone:\n");
+    ESP_LOGI(TAG, "Start new microphone:");
     ESP_LOGI(TAG, "- Sample rate: %d", I2S_SAMPLE_RATE);
     ESP_LOGI(TAG, "- Serial clock: %d", I2S_BCK_PIN);
     ESP_LOGI(TAG, "- Word select: %d", I2S_WS_PIN);
@@ -35,10 +35,14 @@ void microphone_setup(microphone_handle_t *handle)
     ESP_LOGI(TAG, "microphone initialized");
     handle->buffer_size = I2S_BUFFER_SIZE;
     handle->timeout = millis() + VAD_MIC_EXTEND;
+    ESP_LOGI(TAG, "buffer size: %d + %d", sizeof(handle->buffer), handle->buffer_size);
+    ESP_LOGI(TAG, "timeout: %lld", handle->timeout);
+    ESP_LOGI(TAG, "microphone setup done");
 }
 
-void microphone_read(microphone_handle_t *handle)
+void microphone_read(int16_t *data, size_t *bytes_read)
 {
-    i2s_read(I2S_PORT, mic_buffer, sizeof(mic_buffer), &handle->bytes_read, portMAX_DELAY);
-    transform_mic_data(handle->buffer);
+    i2s_read(I2S_PORT, mic_buffer, I2S_BUFFER_SIZE, bytes_read, portMAX_DELAY);
+    *bytes_read = *bytes_read / 2;
+    transform_mic_data(data);
 }

@@ -20,6 +20,6 @@ typedef struct
 
 void microphone_setup(microphone_handle_t *handle);
 
-void microphone_read(microphone_handle_t *handle);
+void microphone_read(int16_t *data, size_t *bytes_read);
 
 #endif // MICROPHONE_H

@@ -4,7 +4,7 @@
 #include "app/i2s_common.h"
 #include "freertos/FreeRTOS.h"
 
-#define VTS_WS_BUFFER_SIZE (I2S_BUFFER_SIZE *I2S_SIZE_PER_SAMPLE)
+#define VTS_WS_BUFFER_SIZE (I2S_BUFFER_SIZE * I2S_SIZE_PER_SAMPLE)
 
 typedef struct
 {
@@ -14,6 +14,6 @@ typedef struct
 
 void voice_to_server_ws_setup(vts_ws_config_t config);
 
-void voice_to_server_ws_callback(char *data, size_t size);
+void voice_to_server_ws_callback(const char *data, size_t size);
 
 #endif
