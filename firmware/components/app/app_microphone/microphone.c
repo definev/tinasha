@@ -42,7 +42,7 @@ void microphone_setup(microphone_handle_t *handle)
 
 void microphone_read(int16_t *data, size_t *bytes_read)
 {
-    i2s_read(I2S_PORT, mic_buffer, I2S_BUFFER_SIZE, bytes_read, portMAX_DELAY);
+    i2s_read(I2S_PORT, mic_buffer, I2S_BUFFER_SIZE * sizeof(mic_buffer[0]), bytes_read, portMAX_DELAY);
     *bytes_read = *bytes_read / 2;
     transform_mic_data(data);
 }

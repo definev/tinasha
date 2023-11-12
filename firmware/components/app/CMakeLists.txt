@@ -10,6 +10,7 @@ set(srcs
     "app_voice_to_server/ws.c"
     "app_wifi_helper/wifi_helper.c"
     "app_tinasha_os/tcp_server.c"
+    "app_tinasha_os/udp_server.c"
     "app_tinasha_os/app_header.c")
 
 # Always included headers

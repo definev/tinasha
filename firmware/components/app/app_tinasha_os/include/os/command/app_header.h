@@ -15,14 +15,24 @@ typedef enum
     HEADER_TYPE_RECEIVE_WAV = 0xAA,
 
     /*
-    header[0] = 0xAB
+    header[0] = 0xBB
     header[1] = none 
     header[2] = none
     header[3] = volume
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_ADJUST_VOLUME = 0xAB,
+    HEADER_TYPE_ADJUST_VOLUME = 0xBB,
+
+    /*
+    header[0] = 0xCC
+    header[1] = enable 
+    header[2] = none
+    header[3] = none
+    header[4] = none
+    header[5] = none
+    */
+    HEADER_TYPE_ENABLE_MICROPHONE = 0xCC,
 } header_type_t;
 
 void command_header_log(uint8_t *header);
