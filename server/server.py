@@ -33,6 +33,8 @@ def listen_detect(queue, manager, config):
     RATE = config['mic']['rate']
     FRAMES_PER_SECOND = int(RATE / config['mic']['chunk'])
     MIC_FORMAT = np.dtype(config['mic']['format'])
+
+    print(f"\n🎤 Listening on {UDP_ADDR_PORT} with VAD window length {config['vad']['window_length']} seconds\n")
     
     while True:
         try:
@@ -43,12 +45,11 @@ def listen_detect(queue, manager, config):
                     device = manager.get_device_from_ip(
                         addr[0]
                     )  # what device sent this packet? (Needs to be added from multicast_listen)
-                    
+                     
                     if device:
                         frame = np.frombuffer(data, dtype=MIC_FORMAT)
                         is_speech = device.vad.vad.is_speech(data, RATE)
 
-                        device.update_LEDs(is_speech)  # Visualize speaking (and server listening) on LED's
                         device.vad.window.append(is_speech)  # Running window to calculate ratio of frames that are classified as speech
 
                         if (len(device.vad.window) == device.vad.window.maxlen):  # wait till full
@@ -123,9 +124,7 @@ def listen_detect(queue, manager, config):
 def transcribe_respond(queue, tts, llm, config):
     tic = time.time()
     audio_model = whisper.load_model(config['transcribe']['whisper_model'])
-    print(
-        f"\n🎤 Loaded Whisper model [bold]{config['transcribe']['whisper_model']}[/] in {time.time()-tic:.3f} seconds\n"
-    )
+    print(f"\n🎤 Loaded Whisper model [bold]{config['transcribe']['whisper_model']}[/] in {time.time()-tic:.3f} seconds\n")
 
     while True:
         while queue.empty():
@@ -133,6 +132,11 @@ def transcribe_respond(queue, tts, llm, config):
 
         data, device, last_one = queue.get()
         tic = time.time()
+
+        print("\n🎤 [bold]Transcribing[/]...")
+        print(f"data: {len(data)}")
+        print(f"device: {device}")
+        print(f"last_one: {last_one}")
 
         with warnings.catch_warnings():  # stop repeated warnings from Whisper
             warnings.simplefilter("ignore")
@@ -157,7 +161,7 @@ def transcribe_respond(queue, tts, llm, config):
                             device, text_response, path_name=config['audio_dir']
                         )
                         if wav_fname:
-                            device.send_audio(wav_fname, mic_timeout=10)
+                            device.send_audio(wav_fname, mic_timeout=10, volume=16)
                         else:
                             # TODO: send placeholder response saying there's an issue
                             device.log.warning(f"No audio sent")
@@ -197,7 +201,7 @@ def multicast_listen(manager, config):
             )
             host_name = greet_msg.split(" ")[0]
             device = manager.create_device(host_name, address[0])
-            device.send_audio(config['greeting_wav'], volume=14, fade=10, mic_timeout=30)
+            device.send_audio(config['greeting_wav'], volume=16, mic_timeout=30)
 
     except Exception:
         print(traceback.format_exc())
@@ -232,13 +236,6 @@ class ConfigUpdater:
                 else:
                     print(f"[blink red] Unknown config key:[/] {key} - see examples in {__file__}:{sys._getframe().f_lineno}")
 
-def show_git_hash():
-    try:
-        git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip().decode('utf-8')
-        print(f"\n🚀 Git hash: [green]{git_hash}[/]")
-    except subprocess.CalledProcessError:
-        print("An error occurred while retrieving the Git hash.")
-
 def load_and_validate_config(filename):
     if not os.path.exists("credentials.json"):
         raise FileNotFoundError(f"credentials.json not found. See credentials.json.example for an example")
@@ -270,8 +267,6 @@ def main(**kwargs):
 
     if(config['use_notes']):
         print(f"\n📝 Notes are enabled, using {config['notes_file']}")
-
-    show_git_hash()
 
     queue = Queue()
     manager = DeviceManager(config)

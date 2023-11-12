@@ -18,6 +18,7 @@ class ElevenLabs:
         self.URL = "https://api.elevenlabs.io/v1/"
         self.jsonfile = config['voices_file']
         self.voices = self.get_voices()
+        print(f"\n🗣️  Voices available: {self.voices}")
         self.temp_wav_fname = config['temp_wav_fname']
         for k,v in self.voices.items():
             print(f"{v['name']} \t[dim]({v['voice_id']})[/dim]")
@@ -33,11 +34,10 @@ class ElevenLabs:
             response = requests.request("GET", f"{self.URL}voices", headers=self.headers)
             voices_dict={}
             for elevenvoice in response.json().get('voices'):
-                if(elevenvoice['category'] == "cloned"):
-                    voices_dict[elevenvoice['name']] = {
-                        "voice_id": elevenvoice['voice_id'],
-                        "name": elevenvoice['name'],
-                    }
+                voices_dict[elevenvoice['name']] = {
+                    "voice_id": elevenvoice['voice_id'],
+                    "name": elevenvoice['name'],
+                }
             print(f"Fetched voices from Elevenlabs and saved to [bold]{self.jsonfile}[/]. [blink red] Remember to modify the friendly name if your LLM uses these! [/]")
 
             with open(self.jsonfile, 'w') as fp:

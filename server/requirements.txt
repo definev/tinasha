@@ -1,5 +1,5 @@
 dateparser
-openai
+openai==0.28.0
 fire
 numpy
 openai-whisper

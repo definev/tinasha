@@ -22,7 +22,6 @@ class CustomFormatter(Formatter):
 class Vad:
     def __init__(self, config):
         self.config = config
-        self.led_update_time = time.time()
         self.vad = webrtcvad.Vad(3)
 
         FRAMES_PER_SECOND = int(self.config['mic']['rate'] / self.config['mic']['chunk'])
@@ -36,7 +35,6 @@ class Vad:
         self.silence_count = 0
         self.frame_count = 0
         self.new_segment = True
-        self.led_power = 0
         self.fname = None
 
     def reset(self):
@@ -104,13 +102,20 @@ class Device:
         logger.addHandler(file_handler)
         return logger
 
-    def send_audio(self, fname, mic_timeout=5 * 60, volume=13, fade=10):
+    def send_audio(self, fname, mic_timeout=5 * 60, volume=13):
         # header[0]   0xAA for audio
         # header[1:2] mic timeout in seconds (after audio is done playing)
         # header[3]   volume
-        # header[4]   fade rate of LED's VAD visualization
+        # header[4]   not used
         # header[5]   not used
-        header = bytes([0xaa, (mic_timeout & 0xff00) >> 8, mic_timeout & 0xff, volume, fade, 0])
+        header = bytes([0xaa, 
+                        (mic_timeout & 0xff00) >> 8, 
+                        mic_timeout & 0xff, 
+                        volume, 
+                        0, 
+                        0])
+        print(f"Sending audio to {self.hostname} ({fname})")
+        print(f"header: {header}")
         audio_data = (
             AudioSegment.from_file(os.path.join(self.config['audio_dir'], fname))
             .set_channels(1)
@@ -118,36 +123,21 @@ class Device:
             .set_sample_width(2)
             .raw_data
         )
-        self.send_TCP(header, audio_data, tcp_timeout=60) # 60 (!!) second tcp_timeout for audio as we currently read bytes from TCP as I2S buffer frees up
+        self.send_tcp(header, audio_data, tcp_timeout=60) # 60 (!!) second tcp_timeout for audio as we currently read bytes from TCP as I2S buffer frees up
 
     def prune_messages(self):
         while(len(self.messages) > self.config['llm']['max_messages']):
             self.log.debug(f"Pruning message: {self.messages[1]['role']}")
             self.messages.pop(1)
 
-    def update_LEDs(self, is_speech):
-        if(is_speech): # accumulate power until ready to update LED's
-            self.vad.led_power = min(255, self.vad.led_power + self.config['led']['power'])
-
-        if(time.time() - self.vad.led_update_time > self.config['led']['update_period']):
-            self.vad.led_update_time = time.time()
-            if(self.vad.led_power > 0):
-                # header[0]   0xCC for LED blink command
-                # header[1]   starting intensity for rampdown
-                # header[2:4] RGB color
-                # header[5]   fade rate
-                header = bytes([0xcc, self.vad.led_power, 255, 255, 255, self.config['led']['fade']])
-                self.send_TCP(header, None, 0.1)
-            self.vad.led_power = 0
-
     def stop_listening(self):
         # header[0]   0xDD for mic timeout command
         # header[1:2] mic timeout in seconds
         # header[3:5] not used
         header = bytes([0xdd, 0, 0, 0, 0, 0])
-        self.send_TCP(header, None, 0.2)
+        self.send_tcp(header, None, 0.2)
 
-    def send_TCP(self, header, data, tcp_timeout):
+    def send_tcp(self, header, data, tcp_timeout):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(tcp_timeout)
         try:
