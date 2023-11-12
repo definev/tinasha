@@ -24,7 +24,7 @@ menu "Example Configuration"
         help 
             Max timeout for peripheral
     
-    config MICROPHONE_RECV_BUF_SIZE
+    config BUFFER_SIZE
         int "Microphone buffer size"
         default 1024 
         help
@@ -71,5 +71,17 @@ menu "Example Configuration"
         default 512
         help
             TCP buffer size
+
+    config TINASHA_MULTICAST_IP
+        string "Tinasha multicast IP"
+        default "239.0.0.1"
+        help
+            Multicast IP to send data to Tinasha server
+    
+    config TINASHA_MULTICAST_PORT
+        int "Tinasha multicast port"
+        default 12345
+        help
+            Multicast port to send data to Tinasha server
 
 endmenu

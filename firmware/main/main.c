@@ -4,6 +4,7 @@
 #include "app/vts_protocol/udp.h"
 #include "app/microphone.h"
 #include "app/speaker.h"
+#include "os/udp_server.h"
 
 #include "os/tcp_server.h"
 #include "os/command/app_header.h"
@@ -29,7 +30,6 @@ static const char *TAG = "app_main";
 
 static wifi_helper_handle_t wifi_helper_handle;
 
-static voice_to_server_handle_t voice_to_server_handle;
 static microphone_handle_t microphone_handle = {};
 
 volatile bool audio_playing = false;
@@ -45,9 +45,10 @@ void repeat_microphone_task(void *arg)
     ESP_LOGI(TAG, "repeat_microphone_task task started");
     while (1)
     {
-         if (audio_playing == true)
+        vTaskDelay(1);
+        if (audio_playing == true)
         {
-            ESP_LOGI(TAG, "audio playing, skipping microphone");
+            // ESP_LOGI(TAG, "audio playing, skipping microphone");
             continue;
         }
         if (wifi_helper_handle.connected == false)
@@ -187,7 +188,7 @@ void tcp_server_task(void *arg)
     tcp_server_shutdown(&tcp_server_handle);
 }
 
-void setup()
+void app_main()
 {
     // boilerplate
     {
@@ -211,15 +212,18 @@ void setup()
     microphone_setup(&microphone_handle);
     speaker_setup();
 
+    udp_server_begin_packet(CONFIG_TINASHA_MULTICAST_IP, CONFIG_TINASHA_MULTICAST_PORT);   
+    udp_server_write("tinasha-v1", 10);
+    udp_server_end_packet();
+
     voice_to_server_udp_setup((voice_to_server_udp_config_t){
         .ip_addr = CONFIG_VTS_UDP_SERVER_IP,
         .port = CONFIG_VTS_UDP_SERVER_PORT,
     });
-    // voice_to_server_ws_setup(
-    //     (vts_ws_config_t){
-    //         .uri = CONFIG_WS_URI,
-    //         .buffer_size = VTS_WS_BUFFER_SIZE,
-    //     });
+    // voice_to_server_ws_setup((vts_ws_config_t){
+    //     .uri = CONFIG_WS_URI,
+    //     .buffer_size = VTS_WS_BUFFER_SIZE,
+    // });
 
     tcp_server_setup(&tcp_server_handle, CONFIG_TINASHA_TCP_SERVER_PORT);
 
@@ -228,9 +232,4 @@ void setup()
         xTaskCreate(&repeat_microphone_task, "repeat_microphone", 4096, NULL, 1, NULL);
         xTaskCreate(&tcp_server_task, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL);
     }
-}
-
-void app_main()
-{
-    setup();
 }

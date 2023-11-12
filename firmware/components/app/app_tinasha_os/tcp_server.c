@@ -37,7 +37,7 @@ void tcp_server_setup(tcp_server_handle_t *handle, uint16_t port)
 
     ESP_LOGI(TAG, "Socket %d created, local_addr: %s", handle->sock_fd, inet_ntoa(handle->local_addr.sin_addr));
 
-    return handle;
+    return;
 
 CLEAN_UP:
 {
@@ -45,7 +45,7 @@ CLEAN_UP:
     {
         close(handle->sock_fd);
     }
-    return handle;
+    return;
 }
 }
 
