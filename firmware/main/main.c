@@ -26,6 +26,11 @@
 
 #define millis() (esp_timer_get_time() / 1000)
 
+int64_t extends_seconds(uint8_t seconds)
+{
+    return millis() + (int64_t)(seconds * 1000);
+}
+
 static const char *TAG = "app_main";
 
 static wifi_helper_handle_t wifi_helper_handle;
@@ -48,23 +53,23 @@ void repeat_microphone_task(void *arg)
         vTaskDelay(1);
         if (audio_playing == true)
         {
-            // ESP_LOGI(TAG, "audio playing, skipping microphone");
-            continue;
+            goto skip_microphone;
         }
         if (wifi_helper_handle.connected == false)
         {
-            microphone_handle.bytes_read = 0;
-            continue;
+            goto skip_microphone;
         }
-        // if (microphone_handle.timeout > millis())
-        // {
-        //     microphone_handle.bytes_read = 0;
-        //     continue;
-        // }
+        if (microphone_handle.timeout < millis())
+        {
+            goto skip_microphone;
+        }
 
         microphone_read(microphone_handle.buffer, &microphone_handle.bytes_read);
         voice_to_server_udp_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
-        // voice_to_server_ws_callback((const char *)microphone_handle.buffer, microphone_handle.bytes_read);
+
+    skip_microphone:
+        microphone_handle.bytes_read = 0;
+        continue;
     }
 }
 
@@ -89,8 +94,6 @@ void _handle_receive_wav_header(uint8_t *header)
 
     finish_receiving = false;
 
-    vTaskDelay(pdMS_TO_TICKS(200));
-
     while (tcp_server_is_client_alive(&tcp_server_handle) && !finish_receiving)
     {
         tcp_bytes_read = tcp_server_receive_data(&tcp_server_handle, tcp_buff, CONFIG_TCP_BUFFER_SIZE);
@@ -100,9 +103,8 @@ void _handle_receive_wav_header(uint8_t *header)
             if (finish_receiving == false)
             {
                 finish_receiving = true;
-                break;
             }
-            continue;
+            break;
         }
 
         speaker_append_tcp_to_wav(tcp_buff, tcp_bytes_read, wav_data, &total_sample_read, volume);
@@ -116,33 +118,39 @@ void _handle_receive_wav_header(uint8_t *header)
 
             bytes_to_write = total_sample_read * sizeof(wav_size_t);
             bytes_written = 0;
-            // voice_to_server_ws_callback((char *)wav_data, bytes_to_write);
             speaker_write((char *)wav_data, bytes_to_write, &bytes_written);
             total_sample_read = 0;
         }
     }
 
-    uint32_t silence_buffer[240];
-    memset(silence_buffer, 0, sizeof(silence_buffer));
-    for (int i = 0; i < 8; i++)
-    {
-        size_t bytes_written = 0;
-        speaker_write((const char *)silence_buffer, sizeof(silence_buffer), &bytes_written);
-    }
+    speaker_write((char *)"", 0, &bytes_written);
 
     audio_playing = false;
 
-    microphone_handle.timeout = millis() + _timeout * 1000;
+    microphone_handle.timeout = extends_seconds(_timeout);
 
     ESP_LOGI(TAG, "tcp_server_is_client_alive: %d", tcp_server_is_client_alive(&tcp_server_handle));
     ESP_LOGI(TAG, "Done loading audio in buffers in %lld ms", millis() - _tic);
-    ESP_LOGI(TAG, "Set microphone_timeout to %lld", microphone_handle.timeout);
+    ESP_LOGI(TAG, "Extended microphone %ds", _timeout);
 }
 
 void _handle_adjust_volume_header(uint8_t *header)
 {
     command_header_parse_volume(header, &volume);
     ESP_LOGI(TAG, "Set volume to %d", volume);
+}
+
+void _handle_microphone_timeout_header(uint8_t *header)
+{
+    command_header_parse_timeout(header, &_timeout);
+    if (_timeout == 0)
+    {
+        ESP_LOGI(TAG, "stop listening to microphone");
+        return;
+    }
+
+    microphone_handle.timeout = extends_seconds(_timeout);
+    ESP_LOGI(TAG, "Set microphone_timeout to %lld", microphone_handle.timeout);
 }
 
 void tcp_server_event_handler()
@@ -173,6 +181,13 @@ void tcp_server_event_handler()
     case HEADER_TYPE_ADJUST_VOLUME:
         ESP_LOGI(TAG, "Adjusting volume");
         _handle_adjust_volume_header(app_header);
+        break;
+    case HEADER_TYPE_MICROPHONE_TIMEOUT:
+        ESP_LOGI(TAG, "Setting microphone timeout");
+        _handle_microphone_timeout_header(app_header);
+        break;
+    default:
+        ESP_LOGI(TAG, "Unknown header type");
         break;
     }
     tcp_server_diconnect_client(&tcp_server_handle);
@@ -212,7 +227,7 @@ void app_main()
     microphone_setup(&microphone_handle);
     speaker_setup();
 
-    udp_server_begin_packet(CONFIG_TINASHA_MULTICAST_IP, CONFIG_TINASHA_MULTICAST_PORT);   
+    udp_server_begin_packet(CONFIG_TINASHA_MULTICAST_IP, CONFIG_TINASHA_MULTICAST_PORT);
     udp_server_write("tinasha-v1", 10);
     udp_server_end_packet();
 
@@ -229,7 +244,7 @@ void app_main()
 
     /// Schedule task
     {
-        xTaskCreate(&repeat_microphone_task, "repeat_microphone", 4096, NULL, 1, NULL);
-        xTaskCreate(&tcp_server_task, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL);
+        xTaskCreatePinnedToCore(&repeat_microphone_task, "repeat_microphone", 4096, NULL, configMAX_PRIORITIES, NULL, 0);
+        xTaskCreatePinnedToCore(&tcp_server_task, "tcp_server", 4096, NULL, configMAX_PRIORITIES, NULL, 1);
     }
 }
