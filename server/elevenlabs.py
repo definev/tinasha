@@ -51,7 +51,7 @@ class ElevenLabs:
             device.log.warning(f"Voice '{device.voice}' not found, using default {self.default_voice}")
             return self.voices[self.default_voice]['voice_id']
 
-    def text_to_speech(self, device, text, path_name="data"):
+    def text_to_speech(self, device, text, path_name="secret_data"):
         now = datetime.now()
         now_str = now.strftime("%Y-%m-%d_%H-%M-%S")
 

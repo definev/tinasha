@@ -102,7 +102,7 @@ class Device:
         logger.addHandler(file_handler)
         return logger
 
-    def send_audio(self, fname, mic_timeout=5 * 60, volume=13):
+    def send_audio(self, fname, mic_timeout=5 * 60, volume=13, preset=False):
         # header[0]   0xAA for audio
         # header[1:2] mic timeout in seconds (after audio is done playing)
         # header[3]   volume
@@ -117,7 +117,7 @@ class Device:
         print(f"Sending audio to {self.hostname} ({fname})")
         print(f"header: {header}")
         audio_data = (
-            AudioSegment.from_file(os.path.join(self.config['audio_dir'], fname))
+            AudioSegment.from_file(os.path.join(self.config['audio_dir'] if preset else self.config['audio_history_dir'], fname))
             .set_channels(1)
             .set_frame_rate(16000)
             .set_sample_width(2)

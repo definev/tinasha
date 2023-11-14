@@ -69,20 +69,23 @@ def listen_detect(queue, manager, config):
                             else:
                                 device.vad.buffer.extend(frame)
                                 device.vad.frame_count += 1
+                                device.log.debug(
+                                    f"🔵 Recording. VAD window: {device.vad.visualization()}"
+                                )
                                 # This is used to transcribe every TRANSCRIBE_PERIOD seconds, in applications where you want to see transcription updating realtime, say on a screen
-                                if (
-                                    device.vad.frame_count
-                                    % int(FRAMES_PER_SECOND * config['transcribe']['period'])
-                                    == 0
-                                ):
-                                    audio_data = np.frombuffer(
-                                        b"".join(list(device.vad.buffer)),
-                                        dtype=MIC_FORMAT,
-                                    )
-                                    device.log.debug(
-                                        f"Adding incomplete phrase to transcribe queue"
-                                    )
-                                    queue.put([audio_data, device, False])
+                                # if (
+                                #     device.vad.frame_count
+                                #     % int(FRAMES_PER_SECOND * config['transcribe']['period'])
+                                #     == 0
+                                # ):
+                                #     audio_data = np.frombuffer(
+                                #         b"".join(list(device.vad.buffer)),
+                                #         dtype=MIC_FORMAT,
+                                #     )
+                                #     device.log.debug(
+                                #         f"Adding incomplete phrase to transcribe queue"
+                                #     )
+                                #     queue.put([audio_data, device, False])
 
                                 # Speech has stopped
                                 if ratio < config['vad']['silence_stopping_ratio']:
@@ -101,7 +104,7 @@ def listen_detect(queue, manager, config):
                                         ).astype(np.int16)
                                         write(
                                             os.path.join(
-                                                config['audio_dir'], f"{device.vad.fname}.wav"
+                                                config['audio_history_dir'], f"{device.vad.fname}.wav"
                                             ),
                                             RATE,
                                             audio_data.astype(MIC_FORMAT),
@@ -111,6 +114,7 @@ def listen_detect(queue, manager, config):
                                             extra={"highlighter": None},
                                         )
                                         device.vad.reset()
+                                        time.sleep(1)
                                 else:
                                     device.vad.silence_count = 0
         except Exception:
@@ -158,10 +162,10 @@ def transcribe_respond(queue, tts, llm, config):
                         text_response = llm.askGPT(device, new_res)
                         device.last_response = text_response  # use this as prompt for next Whisper transcription
                         wav_fname = tts.text_to_speech(
-                            device, text_response, path_name=config['audio_dir']
+                            device, text_response, path_name=config['audio_history_dir']
                         )
                         if wav_fname:
-                            device.send_audio(wav_fname, mic_timeout=10, volume=16)
+                            device.send_audio(wav_fname, mic_timeout=30, volume=16)
                         else:
                             # TODO: send placeholder response saying there's an issue
                             device.log.warning(f"No audio sent")
@@ -201,7 +205,7 @@ def multicast_listen(manager, config):
             )
             host_name = greet_msg.split(" ")[0]
             device = manager.create_device(host_name, address[0])
-            device.send_audio(config['greeting_wav'], volume=16, mic_timeout=30)
+            device.send_audio(config['greeting_wav'], volume=16, mic_timeout=30, preset=True)
 
     except Exception:
         print(traceback.format_exc())
@@ -243,7 +247,7 @@ def load_and_validate_config(filename):
     with open(filename, 'r') as f:
         config = yaml.safe_load(f)
     
-    for dir in [config['audio_dir'], config['log_dir']]:
+    for dir in [config['audio_dir'], config['audio_history_dir'], config['log_dir']]:
         if not os.path.exists(dir):
             print(f"📂 [gold1]Creating [bold]{dir}[/]")
             os.makedirs(dir)
