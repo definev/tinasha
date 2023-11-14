@@ -61,21 +61,7 @@ void voice_to_server_udp_setup(voice_to_server_udp_config_t config)
 void voice_to_server_udp_callback(const char *data, size_t size)
 {
     curr_sock = voice_to_server_udp_init();
-    int retry_count = 0;
-    while (retry_count < 5)
-    {
-        int err = sendto(curr_sock, data, size, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
-        if (err < 0)
-        {
-            ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-            retry_count++;
-            continue;
-        }
-        else
-        {
-            break;
-        }
-    }
+    sendto(curr_sock, data, size, 0, (const struct sockaddr *)&dest_addr, sizeof(dest_addr));
 }
 
 void voice_to_server_udp_close()

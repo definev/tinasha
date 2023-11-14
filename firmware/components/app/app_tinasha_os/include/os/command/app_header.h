@@ -16,7 +16,7 @@ typedef enum
 
     /*
     header[0] = 0xBB
-    header[1] = none 
+    header[1] = none
     header[2] = none
     header[3] = volume
     header[4] = none
@@ -26,13 +26,12 @@ typedef enum
 
     /*
     header[0] = 0xCC
-    header[1] = enable 
-    header[2] = none
+    header[1:2] = mic timeout after playing (ms)
     header[3] = none
     header[4] = none
     header[5] = none
     */
-    HEADER_TYPE_ENABLE_MICROPHONE = 0xCC,
+    HEADER_TYPE_MICROPHONE_TIMEOUT = 0xDD,
 } header_type_t;
 
 void command_header_log(uint8_t *header);
