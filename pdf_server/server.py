@@ -15,9 +15,6 @@ from langserve import add_routes
 
 from langchain.schema.runnable import RunnableLambda
 
-from PyPDF2 import PdfReader
-from operator import itemgetter
-
 # MODEL SETUP
 with open("credentials.json", "r") as f:
     cred = json.load(f)
