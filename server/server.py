@@ -24,6 +24,15 @@ install(show_locals=False)
 from devices import DeviceManager
 from elevenlabs import ElevenLabs
 from llm import OpenAIFunctionCalling
+from pdf_server import PDFServerQuery
+
+from enum import Enum
+
+class ServerMode(Enum):
+    LLM = 1
+    PDF = 2
+
+current_mode = ServerMode.LLM
 
 # listen to UDP packets from devices & use Voice Activity Detection (VAD) to add spoken segments to transcribe queue
 def listen_detect(queue, manager, config):
@@ -121,7 +130,9 @@ def listen_detect(queue, manager, config):
 
 
 # transcribe audio segments from queue, get LLM response, and send TTS to device
-def transcribe_respond(queue, tts, llm, config):
+def transcribe_respond(queue, tts, llm, pdf, config):
+    global current_mode
+
     tic = time.time()
     audio_model = whisper.load_model(config['transcribe']['whisper_model'])
     print(f"\n🎤 Loaded Whisper model [bold]{config['transcribe']['whisper_model']}[/] in {time.time()-tic:.3f} seconds\n")
@@ -155,7 +166,10 @@ def transcribe_respond(queue, tts, llm, config):
                     )
                     if last_one:
                         device.stop_listening()  # while server is "thinking"
-                        text_response = llm.askGPT(device, new_res)
+                        if current_mode == ServerMode.LLM:
+                            text_response = llm.askGPT(device, new_res)
+                        else:
+                            text_response = pdf.ask_pdf(new_res)
                         device.last_response = text_response  # use this as prompt for next Whisper transcription
                         wav_fname = tts.text_to_speech(
                             device, text_response, path_name=config['audio_dir']
@@ -272,12 +286,13 @@ def main(**kwargs):
     manager = DeviceManager(config)
     tts = ElevenLabs(config)
     llm = OpenAIFunctionCalling(config)
+    pdf = PDFServerQuery(config)
 
     atexit.register(manager.save_to_json)
 
     threads = [
         threading.Thread(target=listen_detect, args=(queue, manager, config), daemon=True),
-        threading.Thread(target=transcribe_respond, args=(queue, tts, llm, config), daemon=True),
+        threading.Thread(target=transcribe_respond, args=(queue, tts, llm, pdf, config), daemon=True),
         threading.Thread(target=multicast_listen, args=(manager,config), daemon=True),
     ]
 

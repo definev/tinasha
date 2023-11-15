@@ -60,3 +60,6 @@ tcp_port: 3001 # for sending audio files to ESP32
 multicast: # Listen for announcements of devices connecting
   group: "239.0.0.1" 
   port: 12345
+
+pdf_server:
+  url: "http://localhost:8000"
