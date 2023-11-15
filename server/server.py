@@ -36,7 +36,6 @@ current_mode = ServerMode.LLM
 
 # listen to UDP packets from devices & use Voice Activity Detection (VAD) to add spoken segments to transcribe queue
 def listen_detect(queue, manager, config):
-
     UDP_ADDR_PORT = (config['udp']['ip'], config['udp']['port'])
     CHUNK_BYTES = config['mic']['chunk'] * np.dtype(config['mic']['format']).itemsize
     RATE = config['mic']['rate']
@@ -224,6 +223,55 @@ def multicast_listen(manager, config):
             print("Closing multicast socket")
             mcast_sock.close()
 
+def control_listen(config, pdf):
+    global current_mode
+    control_ip = config['control']['ip']
+    control_port = config['control']['port']
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((control_ip, control_port))
+        s.listen()
+
+        print(f"\n🎛️ Listening for control commands on {control_ip}:{control_port}")
+        try:
+            while True:
+                s.settimeout(None)
+                conn, addr = s.accept()
+                with conn:
+                    print(f"Connected by {addr}")
+                    buffer = b''
+                    try:
+                        while True:
+                            s.settimeout(10)
+                            data = conn.recv(1024)
+                            if not data:
+                                break
+                            buffer += data
+                            if b'\0' in data:
+                                break
+                        command, content = buffer.split(b':', 1)
+                        print(f"Received command: {command} with content length: {len(content)}")
+                    except Exception:
+                        print("Timeout waiting for command")
+                        continue
+                    if command == b'add_pdf':
+                        response = pdf.add_pdf(content.decode('utf-8'))
+                        conn.sendall(response.encode('utf-8'))
+                    elif command == b'mode':
+                        if content == b'llm':
+                            current_mode = ServerMode.LLM
+                            conn.sendall(b'OK')
+                            print(f"Switching to LLM mode")
+                        else:
+                            current_mode = ServerMode.PDF
+                            conn.sendall(b'OK')
+                            print(f"Switching to PDF mode")
+        except Exception:
+            print(traceback.format_exc())
+        finally:
+            print("Closing control socket")
+            s.close()
+                
 class ConfigUpdater:
     def __init__(self, config):
         self.config = config
@@ -294,6 +342,7 @@ def main(**kwargs):
         threading.Thread(target=listen_detect, args=(queue, manager, config), daemon=True),
         threading.Thread(target=transcribe_respond, args=(queue, tts, llm, pdf, config), daemon=True),
         threading.Thread(target=multicast_listen, args=(manager,config), daemon=True),
+        threading.Thread(target=control_listen, args=(config, pdf), daemon=True),
     ]
 
     for thread in threads:
