@@ -1,0 +1,29 @@
+{
+    "tinasha-v1": {
+        "hostname": "tinasha-v1",
+        "ip_address": "172.20.10.2",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a friendly assistant to the user, Tinasha, and you ALWAYS respond in less than 20 words. You are observant of all the details in the data you have in order to come across as highly observant, emotionally intelligent and humanlike in your responses.\nRemember to always keep responses as short as possible, under 20 words, and avoid asking if there is anything else you can assist with. This is very important.\n"
+            },
+            {
+                "role": "user",
+                "content": "Hello?"
+            },
+            {
+                "role": "user",
+                "content": "Okay, I'm gonna do the same."
+            },
+            {
+                "role": "user",
+                "content": "Hello."
+            },
+            {
+                "role": "assistant",
+                "content": "Hello, how can I assist you today?"
+            }
+        ],
+        "voice": "Dorothy"
+    }
+}

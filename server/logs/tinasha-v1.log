@@ -1,0 +1,76 @@
+2023-11-15 13:48:03,216 - INFO - Created new device with IP 172.20.10.2
+2023-11-15 13:48:30,210 - DEBUG - 🔴 Started recording. VAD window: [----------------**********]
+2023-11-15 13:48:32,357 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_13-48-30.wav
+2023-11-15 13:48:33,464 - DEBUG - Transcription time: 1.104
+2023-11-15 13:48:33,466 - INFO - [dim]Transcribed:[/] Hello? (0.07)
+2023-11-15 13:48:33,483 - ERROR - Attempt 1 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:48:33,990 - ERROR - Attempt 2 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:48:34,998 - ERROR - Attempt 3 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:48:37,004 - ERROR - Attempt 4 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:48:38,397 - ERROR - Error: 401
+{"detail":{"status":"quota_exceeded","message":"This request exceeds your quota. You have 17 characters remaining, while 56 characters are required for this request.","character_used":10039,"character_limit":10000}}
+2023-11-15 13:48:38,405 - WARNING - No audio sent
+2023-11-15 13:52:57,261 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:53:21,121 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 13:53:21,126 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:54:12,650 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 13:54:12,656 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:54:58,886 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:55:26,985 - DEBUG - 🔴 Started recording. VAD window: [***----***-****-----------]
+2023-11-15 13:55:29,430 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_13-55-26.wav
+2023-11-15 13:55:30,615 - DEBUG - Transcription time: 1.183
+2023-11-15 13:55:30,618 - INFO - [dim]Transcribed:[/] Okay, I'm gonna do the same. (0.28)
+2023-11-15 13:55:30,820 - ERROR - TCP timeout sending header (0.2 seconds)
+2023-11-15 13:55:30,822 - ERROR - Attempt 1 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:55:31,328 - ERROR - Attempt 2 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:55:32,335 - ERROR - Attempt 3 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:55:34,344 - ERROR - Attempt 4 of 4 failed: module 'openai' has no attribute 'ChatCompletion'
+2023-11-15 13:55:35,645 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:55:36,367 - ERROR - Error: 401
+{"detail":{"status":"quota_exceeded","message":"This request exceeds your quota. You have 17 characters remaining, while 56 characters are required for this request.","character_used":10039,"character_limit":10000}}
+2023-11-15 13:55:36,375 - WARNING - No audio sent
+2023-11-15 13:56:35,763 - ERROR - TCP timeout sending data (60 seconds)
+2023-11-15 13:57:38,268 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 13:58:13,626 - DEBUG - 🔴 Started recording. VAD window: [----------------**********]
+2023-11-15 13:58:13,635 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_13-58-13.wav
+2023-11-15 13:58:13,640 - DEBUG - 🔴 Started recording. VAD window: [----------****************]
+2023-11-15 13:58:14,472 - DEBUG - Transcription time: 0.835
+2023-11-15 13:58:14,474 - INFO - [dim]Transcribed:[/] Hello. (0.16)
+2023-11-15 13:58:15,204 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_13-58-13.wav
+2023-11-15 13:58:20,527 - INFO - OpenAI Response: 
+{
+  "role": "assistant",
+  "content": "Hello, how can I assist you today?"
+}
+2023-11-15 13:58:21,625 - ERROR - Error: 401
+{"detail":{"status":"quota_exceeded","message":"This request exceeds your quota. You have 17 characters remaining, while 34 characters are required for this request.","character_used":10017,"character_limit":10000}}
+2023-11-15 13:58:21,634 - WARNING - No audio sent
+2023-11-15 13:58:22,420 - DEBUG - No result
+2023-11-15 15:13:12,570 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:13:45,299 - DEBUG - 🔴 Started recording. VAD window: [--***-------***---***----*]
+2023-11-15 15:13:54,836 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_15-13-45.wav
+2023-11-15 15:14:00,935 - DEBUG - Transcription time: 6.093
+2023-11-15 15:14:00,937 - DEBUG - [NO SPEECH] That's probably not a question of how to go by creating a cool- Drink (0.47)
+2023-11-15 15:14:12,681 - ERROR - TCP timeout sending data (60 seconds)
+2023-11-15 15:14:12,683 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:15:14,934 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 15:15:14,942 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:15:15,755 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:15:42,683 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 15:15:42,690 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:16:42,779 - ERROR - TCP timeout sending data (60 seconds)
+2023-11-15 15:16:53,059 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:17:40,918 - DEBUG - 🔴 Started recording. VAD window: [----------------**********]
+2023-11-15 15:17:42,497 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 15:17:42,503 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:18:42,594 - ERROR - TCP timeout sending data (60 seconds)
+2023-11-15 15:19:29,049 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:20:18,074 - DEBUG - ⏹ Added to transcribe queue. Saved to output_tinasha-v1_2023-11-15_15-17-40.wav
+2023-11-15 15:20:18,122 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 15:20:18,124 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:20:18,958 - DEBUG - No result
+2023-11-15 15:20:36,521 - DEBUG - 🔴 Started recording. VAD window: [----------------**********]
+2023-11-15 15:20:37,779 - ERROR - TCP error: [Errno 32] Broken pipe
+2023-11-15 15:20:37,786 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:22:12,601 - INFO - Device already exists with IP 172.20.10.2
+2023-11-15 15:23:12,680 - ERROR - TCP timeout sending data (60 seconds)
