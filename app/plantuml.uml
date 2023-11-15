@@ -1,0 +1,70 @@
+@startuml
+set namespaceSeparator ::
+
+class "app::controller::state_controller.dart::StateListController" {
+  {static} +dynamic fetchData()
+  {static} +dynamic fetchEntityData()
+}
+
+class "app::constant::constants.dart::APIConstants" {
+  {static} +String apiHass
+  {static} +String apiGPT
+  {static} +String endpointHass
+}
+
+class "app::view::widget::switch_title.dart::SwitchTile" {
+  +State<SwitchTile> createState()
+}
+
+"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "app::view::widget::switch_title.dart::SwitchTile"
+
+class "app::view::widget::switch_title.dart::_SwitchTileState" {
+  -bool _flag
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "app::view::widget::switch_title.dart::_SwitchTileState"
+
+class "app::view::widget::button_custom.dart::ButtonCustom" {
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::StatelessWidget" <|-- "app::view::widget::button_custom.dart::ButtonCustom"
+
+class "app::view::volume_screen.dart::VolumeScreen" {
+  +State<VolumeScreen> createState()
+}
+
+"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "app::view::volume_screen.dart::VolumeScreen"
+
+class "app::view::volume_screen.dart::_VolumeScreenState" {
+  +bool condition
+  -String _deviceType
+  +Color pickerColor
+  +Color currentColor
+  -double _slider
+  +Widget build()
+}
+
+"app::view::volume_screen.dart::_VolumeScreenState" o-- "dart::ui::Color"
+"flutter::src::widgets::framework.dart::State" <|-- "app::view::volume_screen.dart::_VolumeScreenState"
+
+class "app::view::home_screen.dart::StateListScreen" {
+  +_StateListScreenState createState()
+}
+
+"flutter::src::widgets::framework.dart::StatefulWidget" <|-- "app::view::home_screen.dart::StateListScreen"
+
+class "app::view::home_screen.dart::_StateListScreenState" {
+  +List<dynamic> stateData
+  +Map<String, dynamic>? entityData
+  +void initState()
+  +dynamic fetchData()
+  +dynamic fetchTempData()
+  +Widget build()
+}
+
+"flutter::src::widgets::framework.dart::State" <|-- "app::view::home_screen.dart::_StateListScreenState"
+
+
+@enduml

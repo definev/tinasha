@@ -1,16 +1,21 @@
 import 'dart:convert';
+import 'package:app/view/floating_action_button_view.dart';
+import 'package:app/view/pick_file/single_file_picker.dart';
+import 'package:app/view/speaking_setting_view/speaking_setting_view.dart';
 import 'package:app/view/volume_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:http/http.dart' as http;
 import 'package:app/controller/state_controller.dart';
-
 
 class StateListScreen extends StatefulWidget {
   @override
   _StateListScreenState createState() => _StateListScreenState();
 }
 
-class _StateListScreenState extends State<StateListScreen> {
+class _StateListScreenState extends State<StateListScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController controller = AnimationController(vsync: this);
   List<dynamic> stateData = [];
   Map<String, dynamic>? entityData;
 
@@ -47,6 +52,7 @@ class _StateListScreenState extends State<StateListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Animate.restartOnHotReload = true;
     return Scaffold(
         bottomNavigationBar: BottomAppBar(
           child: SizedBox(
@@ -80,18 +86,32 @@ class _StateListScreenState extends State<StateListScreen> {
                   ),
                 ),
                 Expanded(
-                  child: FloatingActionButton(
-                    onPressed: () {},
-                    child: const Icon(
-                      Icons.add,
-                    ),
-                  ),
-                ),
+                    child: FloatingActionButton(
+                  elevation: 0,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const FloatingActionButtonView(),
+                    );
+                    // controller.reverse();
+                  },
+                  child: Icon(Icons.add),
+                )
+                        .animate(
+                          controller: controller,
+                        )
+                        .fadeIn(delay: 1.ms, duration: 50.ms)),
                 Expanded(
                   child: IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SpeakingSettingView()),
+                      );
+                    },
                     icon: const Icon(
-                      Icons.mic_none_outlined,
+                      Icons.switch_right_rounded,
                     ),
                     iconSize: 32,
                     color: Colors.grey,
@@ -342,22 +362,26 @@ class _StateListScreenState extends State<StateListScreen> {
                     itemCount: stateData.length,
                     itemBuilder: (context, index) {
                       final item = stateData[index];
-                      return Container(
-                        margin: EdgeInsets.all(10),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['entity_id'],
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text('State: ${item['state']}'),
-                                  Text('Last Changed: ${item['last_changed']}'),
-                                ]),
+                      return GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          margin: EdgeInsets.all(10),
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item['entity_id'],
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    Text('State: ${item['state']}'),
+                                    Text(
+                                        'Last Changed: ${item['last_changed']}'),
+                                  ]),
+                            ),
                           ),
                         ),
                       );
