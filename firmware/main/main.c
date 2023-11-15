@@ -123,7 +123,14 @@ void _handle_receive_wav_header(uint8_t *header)
         }
     }
 
-    speaker_write((char *)"", 0, &bytes_written);
+    // Hack to fill buffers with silence and block till all real audio is flushed out
+    uint32_t silenceBuffer[240];
+    memset(silenceBuffer, 0, sizeof(silenceBuffer));
+    for (int i = 0; i < 8; i++)
+    {
+        size_t bytesWritten = 0;
+        speaker_write((char *)silenceBuffer, sizeof(silenceBuffer), &bytesWritten);
+    }
 
     audio_playing = false;
 

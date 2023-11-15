@@ -11,7 +11,7 @@
 
 #define I2S_PORT I2S_NUM_0
 
-#define I2S_DMA_DESC_NUM 6    // Same with I2S DMA buffer count
+#define I2S_DMA_DESC_NUM 4    // Same with I2S DMA buffer count
 #define I2S_DMA_FRAME_NUM 480 // Same with I2S DMA buffer size
 #define I2S_BUFFER_SIZE I2S_DMA_FRAME_NUM
 #define I2S_SAMPLE_BITS 16

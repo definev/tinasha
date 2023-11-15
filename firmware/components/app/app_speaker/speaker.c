@@ -60,7 +60,7 @@ void speaker_append_tcp_to_wav(
     for (size_t i = 0; i < tcp_data_size; i += 2)
     {
         sample = tcp_data[i + 1] << 8 | tcp_data[i];
-        wav_data[*wav_data_size] = (wav_size_t)(sample << volume);
+        wav_data[*wav_data_size] = (wav_size_t)sample << volume;
         (*wav_data_size)++;
     }
 }
