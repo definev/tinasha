@@ -11,7 +11,9 @@ from rich import print
 
 import devices
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+with open("credentials.json", "r") as f:
+    cred = json.load(f)
+    openai.api_key = cred.get("open_ai_api_key")
 
 class OpenAIFunctionCalling:
     def __init__(self, config):

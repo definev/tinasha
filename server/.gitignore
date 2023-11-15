@@ -218,5 +218,7 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,macos
-data/devices.json
-data/voices.json
+data/
+!data/hello_imhere.wav
+
+credentials.json
