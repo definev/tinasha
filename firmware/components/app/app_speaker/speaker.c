@@ -48,7 +48,7 @@ wav_size_t *speaker_init_buffer()
     return wav_data;
 }
 
-static uint16_t sample;
+static int16_t sample;
 void speaker_append_tcp_to_wav(
     uint8_t *tcp_data,
     size_t tcp_data_size,
@@ -61,6 +61,7 @@ void speaker_append_tcp_to_wav(
     {
         sample = tcp_data[i + 1] << 8 | tcp_data[i];
         wav_data[*wav_data_size] = (wav_size_t)sample << volume;
+        
         (*wav_data_size)++;
     }
 }
