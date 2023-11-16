@@ -14,10 +14,10 @@ class _SpeakingSettingViewState extends State<SpeakingSettingView> {
   bool _isCasualMode = true; // Track the state of the switch
   Socket? socket;
 
-  void connectServer() async {
-    var client = await TcpClient.connect('192.168.1.6', 3002,
-        terminatorString: '\r\n\r\n');
-    final data = await client.sendAndClose("mode:llm");
+  void connectServer(String message) async {
+    var client =
+        await TcpClient.connect('192.168.1.5', 3002, terminatorString: '');
+    final data = await client.sendAndClose(message);
     print(data);
   }
 
@@ -39,7 +39,12 @@ class _SpeakingSettingViewState extends State<SpeakingSettingView> {
                 setState(() {
                   _isCasualMode = value;
                   // Handle switch state change as needed
-                  connectServer();
+
+                  if (_isCasualMode) {
+                    connectServer('mode:llm');
+                  } else {
+                    connectServer('mode:pdf');
+                  }
                 });
               },
             ),
@@ -50,7 +55,7 @@ class _SpeakingSettingViewState extends State<SpeakingSettingView> {
             trailing: Icon(Icons.arrow_forward_ios),
           ),
           ListTile(
-            title: Text('Change Tone'),
+            title: Text('Select Tone'),
             subtitle: Text('Change the tone of the TinaVoice'),
             trailing: Icon(Icons.arrow_forward_ios),
           ),

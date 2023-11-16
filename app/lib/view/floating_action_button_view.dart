@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:open_app_file/open_app_file.dart';
 import 'package:pdf_text/pdf_text.dart';
 import 'package:http/http.dart' as http;
+import 'package:tcp_client_dart/tcp_client_dart.dart';
 
 class FloatingActionButtonView extends StatefulWidget {
   const FloatingActionButtonView({super.key});
@@ -30,14 +31,23 @@ class _FloatingActionButtonViewState extends State<FloatingActionButtonView>
       _pdfDoc = await PDFDoc.fromPath(result.files.single.path!);
       setState(() {});
       await _readWholeDoc();
+      // await connectServer('add_pdf:$_text');
       await _postTextToEndpoint();
     }
   }
 
+  // Future connectServer(String message) async {
+  //   var client =
+  //       await TcpClient.connect('192.168.1.5', 3002, terminatorString: '');
+  //   final data = await client.sendAndClose(_text);
+  //   print(data);
+  //   // return data;
+  // }
+
   Future _postTextToEndpoint() async {
     if (_text.isNotEmpty) {
       final response = await http.post(
-        Uri.parse('https://tina.loca.lt/add_pdf/invoke'),
+        Uri.parse('https://tinapdf.loca.lt/add_pdf/invoke'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Bypass-Tunnel-Reminder': 'thuhuh',
