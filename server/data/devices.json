@@ -1,7 +1,7 @@
 {
     "tinasha-v1": {
         "hostname": "tinasha-v1",
-        "ip_address": "172.20.10.2",
+        "ip_address": "172.20.10.14",
         "messages": [
             {
                 "role": "system",
@@ -22,6 +22,22 @@
             {
                 "role": "assistant",
                 "content": "Hello, how can I assist you today?"
+            },
+            {
+                "role": "user",
+                "content": "Hello."
+            },
+            {
+                "role": "assistant",
+                "content": "Hello! How can I help you?"
+            },
+            {
+                "role": "user",
+                "content": "Can you talk to me about the album itself? A lot of the world."
+            },
+            {
+                "role": "assistant",
+                "content": "Of course! The album is a captivating masterpiece that explores various aspects of life and resonates with people worldwide."
             }
         ],
         "voice": "Dorothy"

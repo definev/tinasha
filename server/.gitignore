@@ -220,5 +220,7 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,macos
 data/
 !data/hello_imhere.wav
+!data/casual_mode.mp3
+!data/focus_mode.mp3
 
 credentials.json
