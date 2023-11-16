@@ -5,6 +5,8 @@ use_notes: False
 log_dir: "logs"
 audio_dir: "data"
 greeting_wav: "hello_imhere.wav"
+sw_casual_wav: "casual_mode.mp3"
+sw_focus_wav: "focus_mode.mp3"
 temp_wav_fname: "temp_response.wav"
 elevenlabs_default_voice: "Dorothy"
 

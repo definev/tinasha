@@ -223,7 +223,12 @@ def multicast_listen(manager, config):
             print("Closing multicast socket")
             mcast_sock.close()
 
-def control_listen(config, pdf):
+def notify_all(config, manager, sound):
+    for hostname in manager.devices.keys():
+        device = manager.devices[hostname]
+        device.send_audio(config[sound], volume=16, mic_timeout=30)
+
+def control_listen(config, pdf, manager):
     global current_mode
     control_ip = config['control']['ip']
     control_port = config['control']['port']
@@ -262,10 +267,12 @@ def control_listen(config, pdf):
                             current_mode = ServerMode.LLM
                             conn.sendall(b'OK')
                             print(f"Switching to LLM mode")
+                            notify_all(config, manager, 'sw_casual_wav')
                         else:
                             current_mode = ServerMode.PDF
                             conn.sendall(b'OK')
                             print(f"Switching to PDF mode")
+                            notify_all(config, manager, 'sw_focus_wav')
         except Exception:
             print(traceback.format_exc())
         finally:
@@ -342,7 +349,7 @@ def main(**kwargs):
         threading.Thread(target=listen_detect, args=(queue, manager, config), daemon=True),
         threading.Thread(target=transcribe_respond, args=(queue, tts, llm, pdf, config), daemon=True),
         threading.Thread(target=multicast_listen, args=(manager,config), daemon=True),
-        threading.Thread(target=control_listen, args=(config, pdf), daemon=True),
+        threading.Thread(target=control_listen, args=(config, pdf, manager), daemon=True),
     ]
 
     for thread in threads:
